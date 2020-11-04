@@ -17,7 +17,6 @@ spec:
         path: /repo
         git:
           repo: "{{inputs.parameters.ssh-url}}"
-          revision: "master"
           sshPrivateKeySecret:
             name: ssh-key-secret
             key: github
