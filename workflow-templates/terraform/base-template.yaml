@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: terraform-base-template
+  namespace: argo
+spec:
+  entrypoint: terraform-base
+  templates:
+  - name: terraform-base
+    volumes:
+    - name: azure-backend-secret
+      secret:
+        secretName: azure-backend-conf
+    inputs:
+      artifacts:
+      - name: terraform-folder
+        path: /src
+      parameters:
+      - name: terraform-path
+      - name: action
+      - name: args
+    container: 
+      image: hashicorp/terraform
+      command: ["/bin/sh", "-c"]
+      args:
+       - terraform {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.terraform-path}}
+      workingDir: /src/terraform
+      volumeMounts:
+      - name: azure-backend-secret
+        mountPath: "/secrets/"
+        readOnly: true
+      env:
+      - name: ARM_CLIENT_ID
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_client_id
+      - name: ARM_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_client_secret
+      - name: ARM_SUBSCRIPTION_ID
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_subscription_id
+      - name: ARM_TENANT_ID
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_tenant_id
+    outputs:
+      artifacts:
+      - name: terraform-folder
+        optional: true
+        path: '/src'

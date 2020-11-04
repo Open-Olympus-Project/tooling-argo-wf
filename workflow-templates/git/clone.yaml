@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: git-clone-template
+  namespace: argo
+spec:
+  entrypoint: git-clone
+  templates:
+  - name: git-clone
+    inputs:
+      parameters:
+      - name: ssh-url
+      artifacts:
+      # Check out the master branch of the argo repo and place it at /src
+      # revision can be anything that git checkout accepts: branch, commit, tag, etc.
+      - name: repo
+        path: /repo
+        git:
+          repo: "{{inputs.parameters.ssh-url}}"
+          revision: "master"
+          sshPrivateKeySecret:
+            name: ssh-key-secret
+            key: github
+    container: 
+      image: alpine
+      command: ["bin/sh", "-c" ]
+      args: ["ls /repo -l"]
+    outputs:
+      artifacts:
+      - name: repo
+        path: /repo

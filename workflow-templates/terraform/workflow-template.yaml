@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: terraform-workflow-template
+  namespace: argo
+spec:
+  entrypoint: terraform-workflow
+  podGC:
+    strategy: OnWorkflowSuccess
+  arguments:
+    parameters:
+    - name: environmentName
+      value: mht
+  templates:
+  - name: terraform-workflow 
+    steps:
+    - - name: git-clone-terraform
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url
+            value: "git@github.com:Open-Dataplatform/platform.git"
+
+      - name: infrastructure-check
+        templateRef:
+          name:  az-base-template
+          template:  az-base
+        arguments:
+          parameters:
+          - name: script
+            value: |
+              if ! (( $(az storage account check-name -n $storage_account_name --query "nameAvailable") ))
+              then
+                echo "$storage_account_name exists"
+              else
+                echo "$storage_account_name does not exist.."
+                
+                echo "Creating $resource_group_name"
+                az group create -n $resource_group_name -l westeurope
+                
+                echo "Creating $storage_account_name"
+                az storage account create -g $resource_group_name -n $storage_account_name -l westeurope --sku Standard_LRS
+                az storage container create -n terraformstate --account-name $storage_account_name
+              fi
+
+    - - name: azure-terraform-init
+        templateRef:
+          name: terraform-base-template
+          template: terraform-base
+        arguments:
+          parameters:
+          - name: action
+            value: init
+          - name: args
+            value: -backend-config=/secrets/azurebackend.conf
+          - name: terraform-path
+            value: ./azure
+          artifacts:
+          - name: terraform-folder
+            from: "{{steps.git-clone-terraform.outputs.artifacts.repo}}"
+
+    - - name: azure-terraform-plan
+        templateRef:
+          name: terraform-base-template
+          template: terraform-base
+        arguments:
+          parameters:
+          - name: action
+            value: plan
+          - name: args
+            value: '-lock=false -var=environmentName={{workflow.parameters.environmentName}}'
+          - name: terraform-path
+            value: ./azure
+          artifacts:
+          - name: terraform-folder
+            from: "{{steps.azure-terraform-init.outputs.artifacts.terraform-folder}}"
+
+    - - name: azure-terraform-apply
+        templateRef:
+          name: terraform-base-template
+          template: terraform-base
+        arguments:
+          parameters:
+            - name: action
+              value: apply
+            - name: args
+              value: "-auto-approve -var=environmentName={{workflow.parameters.environmentName}}"
+            - name: terraform-path
+              value: ./azure
+          artifacts:
+            - name: terraform-folder
+              from: "{{steps.azure-terraform-init.outputs.artifacts.terraform-folder}}"

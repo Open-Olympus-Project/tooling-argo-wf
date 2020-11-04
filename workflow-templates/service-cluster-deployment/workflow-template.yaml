@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: service-cluster-deployment-template
+  namespace: argo
+spec:
+  entrypoint: service-cluster-deployment
+  podGC:
+    strategy: OnWorkflowSuccess
+  arguments:
+    parameters:
+    - name: environmentName
+      value: mht
+  templates:
+  - name: service-cluster-deployment 
+    steps:
+    - - name: terraform
+        templateRef:
+          name: terraform-workflow-template
+          template: terraform-workflow
+        arguments:
+          parameters:
+          - name: environmentName
+            value: mht
+      - name: clone-helm
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url
+            value: git@github.com:Open-Dataplatform/Helm.git
+
+    - - name: az-k8s-creds
+        templateRef:
+          name: az-base-template
+          template: az-base
+        arguments:
+          parameters:
+          - name: script
+            value: |
+              az aks get-credentials --resource-group $resource_group_name --name aks-mht

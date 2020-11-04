@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: helm-base-template
+  namespace: argo
+spec:
+  entrypoint: helm-base
+  templates:
+    - name: helm-base
+      inputs:
+        parameters:
+        - name: action
+        - name: args
+        - name: namespace
+        artifacts:
+        - name: chart
+          path: /chart
+        - name: kube-config
+          path: .kube/
+        - name: kubectl
+          path: /bin/kubectl
+          mode: 0755
+          http:
+            url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
+      container:
+        workingDir: /chart
+        image: alpine/helm
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - |
+            kubectl auth can-i auth reconcile
+            kubectl create ns argocd
+          # - helm {{inputs.parameters.action}} {{inputs.parameters.args}} -n {{inputs.parameters.namespace}}
+      
