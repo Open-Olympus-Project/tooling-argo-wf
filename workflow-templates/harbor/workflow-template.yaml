@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: helm-workflow-template
+  name: add-helm-harbor-workflow-template
   namespace: argo
 spec:
-  entrypoint: helm-workflow
+  entrypoint: workflow
   podGC:
     strategy: OnWorkflowSuccess
   templates:
-  - name: helm-workflow
+  - name: workflow
     inputs:
       parameters:
       - name: ssh-url

@@ -11,7 +11,7 @@ spec:
           || any(payload.commits, { any(.added, {# contains ".helm"}) }) )
   submit:
     workflowTemplateRef:
-      name: helm-workflow-template
+      name: add-helm-harbor-workflow-template
     arguments:
       parameters:
       - name: ssh-url
