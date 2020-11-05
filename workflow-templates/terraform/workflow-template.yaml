@@ -92,3 +92,13 @@ spec:
           artifacts:
             - name: terraform-folder
               from: "{{steps.azure-terraform-init.outputs.artifacts.terraform-folder}}"
+
+    outputs:
+      artifacts:
+      - name: kube-config
+        from: '{{steps.azure-terraform-apply.outputs.artifacts.kube-config}}'
+      parameters:
+      - name: dns-name
+        valueFrom:
+          parameter: '{{steps.azure-terraform-apply.outputs.parameters.dns-name}}'
+      

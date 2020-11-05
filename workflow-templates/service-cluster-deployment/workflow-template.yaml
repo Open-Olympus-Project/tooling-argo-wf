@@ -22,21 +22,59 @@ spec:
           parameters:
           - name: environmentName
             value: mht
-      - name: clone-helm
+
+      - name: clone-argo-cd
         templateRef:
           name: git-clone-template
           template: git-clone
         arguments:
           parameters:
           - name: ssh-url
-            value: git@github.com:Open-Dataplatform/Helm.git
-
-    - - name: az-k8s-creds
+            value: git@github.com:Open-Dataplatform/tooling-argo-cd.git
+      
+      - name: clone-ingress-nginx
         templateRef:
-          name: az-base-template
-          template: az-base
+          name: git-clone-template
+          template: git-clone
         arguments:
           parameters:
-          - name: script
-            value: |
-              az aks get-credentials --resource-group $resource_group_name --name aks-mht
+          - name: ssh-url
+            value: git@github.com:Open-Dataplatform/k8s-ingress-nginx.git
+
+    - - name: helm-ingress-nginx
+        templateRef:
+          name: helm-base-template
+          template: helm-base
+        arguments:
+          parameters:
+          - name: action
+            value: 'install'
+          - name: args
+            value: 'ingress-nginx ./.helm'
+          - name: namespace
+            value: 'ingress-nginx'
+          artifacts:
+          - name: kube-config
+            from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+          - name: chart
+            from: '{{steps.clone-ingress-nginx.outputs.artifacts.repo}}'
+      
+      - name: helm-argo-cd
+        templateRef:
+          name: helm-base-template
+          template: helm-base
+        arguments:
+          parameters:
+          - name: action
+            value: 'install'
+          - name: args
+            value: 'argo-cd ./.helm'
+          - name: namespace
+            value: 'argo-cd'
+          - name: value-override
+            value: '--set server.ingress.hosts[0]={{steps.terraform.outputs.parameters.dns-name}}'
+          artifacts:
+          - name: kube-config
+            from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+          - name: chart
+            from: '{{steps.clone-argo-cd.outputs.artifacts.repo}}'

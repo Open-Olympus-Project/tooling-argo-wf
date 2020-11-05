@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: az-aks-cred-template
+  namespace: argo
+spec:
+  entrypoint: az-aks-cred
+  templates:
+  - name: az-aks-cred
+    volumes:
+    - name: azure-backend-secret
+      secret:
+        secretName: azure-backend-conf
+    inputs:
+      parameters:
+      - name: clusterName
+      - name: resourceGroupName
+    container:
+      volumeMounts:
+      - name: azure-backend-secret
+        mountPath: "/secrets/"
+        readOnly: true
+      image: mcr.microsoft.com/azure-cli
+      command: ["/bin/sh", "-c"]
+      args: 
+        - |
+          source /secrets/azurebackend.conf
+          az login --service-principal -u $sp_client_id -p $sp_client_secret --tenant $sp_tenant_id --output none;
+
+          az aks get-credentials --resource-group {{inputs.parameters.resourceGroupName}} --name {{inputs.parameters.clusterName}}
+      env:
+      - name: sp_client_id
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_client_id
+      - name: sp_client_secret
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_client_secret
+      - name: sp_tenant_id
+        valueFrom:
+          secretKeyRef:
+            name: service-principal
+            key: sp_tenant_id
+    outputs:
+      artifacts:
+      - name: kube-config
+        path: '/root/.kube/config'

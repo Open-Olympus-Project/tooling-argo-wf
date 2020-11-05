@@ -12,11 +12,13 @@ spec:
         - name: action
         - name: args
         - name: namespace
+        - name: value-override
+          default: ''
         artifacts:
         - name: chart
           path: /chart
         - name: kube-config
-          path: .kube/
+          path: /.kube/config
         - name: kubectl
           path: /bin/kubectl
           mode: 0755
@@ -29,8 +31,8 @@ spec:
           - "/bin/sh"
           - "-c"
         args:
-          - |
-            kubectl auth can-i auth reconcile
-            kubectl create ns argocd
-          # - helm {{inputs.parameters.action}} {{inputs.parameters.args}} -n {{inputs.parameters.namespace}}
+          - >
+            export KUBECONFIG=/.kube/config;
+            kubectl create ns {{inputs.parameters.namespace}};
+            helm {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.value-override}} -n {{inputs.parameters.namespace}};
       

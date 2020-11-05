@@ -55,3 +55,11 @@ spec:
       - name: terraform-folder
         optional: true
         path: '/src'
+      - name: kube-config
+        optional: true
+        path: '/src/terraform/config'
+      parameters:
+      - name: dns-name
+        valueFrom:
+          default: ''
+          path: '/src/terraform/pip-dns-name.txt'
