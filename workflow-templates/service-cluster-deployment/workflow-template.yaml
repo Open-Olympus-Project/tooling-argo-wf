@@ -72,7 +72,7 @@ spec:
           - name: namespace
             value: 'argo-cd'
           - name: value-override
-            value: '--set server.ingress.hosts[0]={{steps.terraform.outputs.parameters.dns-name}}'
+            value: '--set server.ingress.hosts[0]={{steps.terraform.outputs.parameters.dns-name}}.westeurope.cloudapp.azure.com'
           artifacts:
           - name: kube-config
             from: '{{steps.terraform.outputs.artifacts.kube-config}}'
