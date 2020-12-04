@@ -8,9 +8,9 @@ spec:
   templates:
   - name: terraform-base
     volumes:
-    - name: azure-backend-secret
-      secret:
-        secretName: azure-backend-conf
+    - name: helm-values
+      configMap:
+        name: helm-values-templates
     inputs:
       artifacts:
       - name: terraform-folder
@@ -26,8 +26,8 @@ spec:
        - terraform {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.terraform-path}}
       workingDir: /src/terraform
       volumeMounts:
-      - name: azure-backend-secret
-        mountPath: "/secrets/"
+      - name: helm-values
+        mountPath: "/value-templates/"
         readOnly: true
       env:
       - name: ARM_CLIENT_ID
@@ -58,8 +58,11 @@ spec:
       - name: kube-config
         optional: true
         path: '/src/terraform/config'
+      - name: values
+        optional: true
+        path: '/values'
       parameters:
-      - name: dns-name
+      - name: fqdn
         valueFrom:
           default: ''
-          path: '/src/terraform/pip-dns-name.txt'
+          path: '/src/terraform/fqdn'

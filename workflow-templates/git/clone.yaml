@@ -13,18 +13,42 @@ spec:
       artifacts:
       # Check out the master branch of the argo repo and place it at /src
       # revision can be anything that git checkout accepts: branch, commit, tag, etc.
-      - name: repo
-        path: /repo
-        git:
-          repo: "{{inputs.parameters.ssh-url}}"
-          sshPrivateKeySecret:
-            name: ssh-key-secret
-            key: github
+      # - name: repo
+      #   path: /repo
+      #   git:
+      #     repo: "{{inputs.parameters.ssh-url}}"
+      #     sshPrivateKeySecret:
+      #       name: ssh-key-secret
+      #       key: github
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "k8s-secrets"
+        vault.hashicorp.com/agent-inject-secret-id_rsa: "k8s/data/secrets/github-ssh"
+        vault.hashicorp.com/agent-inject-template-id_rsa: |
+          {{- with secret "k8s/data/secrets/github-ssh" -}}
+          {{ .Data.data.github }}
+          {{- end -}}
+        vault.hashicorp.com/agent-inject-secret-id_rsa.pub: "k8s/data/secrets/github-ssh"
+        vault.hashicorp.com/agent-inject-template-id_rsa.pub: |
+          {{- with secret "k8s/data/secrets/github-ssh" -}}
+          {{ .Data.data.githubpub }}
+          {{- end -}}
     container: 
-      image: alpine
-      command: ["bin/sh", "-c" ]
-      args: ["ls /repo -l"]
+      image: alpine/git
+      command:
+        - /bin/sh
+        - -c 
+      args: 
+      - >
+        mkdir ~/.ssh;
+        touch ~/.ssh/known_hosts;
+        ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts;
+        mv /vault/secrets/* ~/.ssh;
+        chmod -R 600 ~/.ssh;
+        git clone "{{inputs.parameters.ssh-url}}" /repo;
     outputs:
       artifacts:
       - name: repo
+        optional: true
         path: /repo

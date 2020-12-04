@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: helm-workflow-template
+  namespace: argo
+spec:
+  entrypoint: helm-workflow
+  podGC:
+    strategy: OnWorkflowSuccess
+  templates:
+  - name: helm-workflow 
+    inputs:
+      parameters:
+      - name: ssh-url
+      - name: name
+      - name: namespace
+      - name: valuesScript
+        default: ' '
+      artifacts:
+      - name: values
+      - name: kube-config
+    steps:
+    - - name: clone
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url 
+            value: "{{inputs.parameters.ssh-url}}"
+    
+    - - name: helm-install
+        templateRef:
+          name: helm-base-template
+          template: helm-base
+        arguments:
+          parameters:
+          - name: action
+            value: 'upgrade'
+          - name: args
+            value: "{{inputs.parameters.name}} ./.helm"
+          - name: flags
+            value:
+              '
+              {{inputs.parameters.valuesScript}}
+              --namespace {{inputs.parameters.namespace}}
+              --create-namespace
+              --install
+              '
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'
+          - name: chart
+            from: '{{steps.clone.outputs.artifacts.repo}}'
+          - name: values
+            from: '{{inputs.artifacts.values}}'

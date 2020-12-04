@@ -1,24 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: helm-base-template
+  name: kubectl-base-template
   namespace: argo
 spec:
-  entrypoint: helm-base
+  entrypoint: kubectl-base
   templates:
-    - name: helm-base
+    - name: kubectl-base
+      volumes:
+      - name: argo-scripts
+        configMap:
+          name: argo-scripts
       inputs:
         parameters:
-        - name: action
-        - name: args
-        - name: flags
-          default: ''
+        - name: script
         artifacts:
-        - name: values
+        - name: repo
           optional: true
-          path: /values
-        - name: chart
-          path: /chart
+          path: /repo
         - name: kube-config
           path: /.kube/config
         - name: kubectl
@@ -27,13 +26,17 @@ spec:
           http:
             url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
       container:
-        workingDir: /chart
-        image: alpine/helm
+        volumeMounts:
+        - name: argo-scripts
+          mountPath: "/scripts/"
+          readOnly: true
+        workingDir: /repo
+        image: alpine
         command:
           - "/bin/sh"
           - "-c"
         args:
           - >
             export KUBECONFIG=/.kube/config;
-            helm {{inputs.parameters.action}} {{inputs.parameters.flags}} {{inputs.parameters.args}}
+            {{inputs.parameters.script}}
       

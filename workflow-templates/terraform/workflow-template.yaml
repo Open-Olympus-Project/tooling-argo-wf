@@ -9,8 +9,16 @@ spec:
     strategy: OnWorkflowSuccess
   arguments:
     parameters:
-    - name: environmentName
+    - name: environment_name
       value: mht
+    - name: resource_group_name
+      value: service-aks-infrastructure-{{workflow.parameters.environment_name}}
+    - name: storage_account_name
+      value: serviceterraformstate{{workflow.parameters.environment_name}}
+    - name: container_name
+      value: terraformstate
+    - name: key
+      value: k8s.tfstate
   templates:
   - name: terraform-workflow 
     steps:
@@ -31,18 +39,18 @@ spec:
           parameters:
           - name: script
             value: |
-              if ! (( $(az storage account check-name -n $storage_account_name --query "nameAvailable") ))
+              if [[ $(az storage account check-name -n ${{ parameters.storageAccountName }} --query "reason") != *"AlreadyExists"* ]] ;
               then
-                echo "$storage_account_name exists"
+                echo "{{workflow.parameters.storage_account_name}} exists"
               else
-                echo "$storage_account_name does not exist.."
+                echo "{{workflow.parameters.storage_account_name}} does not exist.."
                 
-                echo "Creating $resource_group_name"
-                az group create -n $resource_group_name -l westeurope
+                echo "Creating {{workflow.parameters.resource_group_name}}"
+                az group create -n {{workflow.parameters.resource_group_name}} -l westeurope
                 
-                echo "Creating $storage_account_name"
-                az storage account create -g $resource_group_name -n $storage_account_name -l westeurope --sku Standard_LRS
-                az storage container create -n terraformstate --account-name $storage_account_name
+                echo "Creating {{workflow.parameters.storage_account_name}}"
+                az storage account create -g {{workflow.parameters.resource_group_name}} -n {{workflow.parameters.storage_account_name}} -l westeurope --sku Standard_LRS
+                az storage container create -n terraformstate --account-name {{workflow.parameters.storage_account_name}}
               fi
 
     - - name: azure-terraform-init
@@ -54,7 +62,7 @@ spec:
           - name: action
             value: init
           - name: args
-            value: -backend-config=/secrets/azurebackend.conf
+            value: -backend-config="storage_account_name={{workflow.parameters.storage_account_name}}" -backend-config="container_name={{workflow.parameters.container_name}}" -backend-config="key={{workflow.parameters.key}}" -backend-config="resource_group_name={{workflow.parameters.resource_group_name}}" 
           - name: terraform-path
             value: ./azure
           artifacts:
@@ -70,7 +78,7 @@ spec:
           - name: action
             value: plan
           - name: args
-            value: '-lock=false -var=environmentName={{workflow.parameters.environmentName}}'
+            value: '-lock=false -var=environmentName={{workflow.parameters.environment_name}}'
           - name: terraform-path
             value: ./azure
           artifacts:
@@ -86,7 +94,7 @@ spec:
             - name: action
               value: apply
             - name: args
-              value: "-auto-approve -var=environmentName={{workflow.parameters.environmentName}}"
+              value: "-auto-approve -var=environmentName={{workflow.parameters.environment_name}}"
             - name: terraform-path
               value: ./azure
           artifacts:
@@ -97,8 +105,9 @@ spec:
       artifacts:
       - name: kube-config
         from: '{{steps.azure-terraform-apply.outputs.artifacts.kube-config}}'
+      - name: values
+        from: '{{steps.azure-terraform-apply.outputs.artifacts.values}}'
       parameters:
-      - name: dns-name
+      - name: fqdn
         valueFrom:
-          parameter: '{{steps.azure-terraform-apply.outputs.parameters.dns-name}}'
-      
+          parameter: '{{steps.azure-terraform-apply.outputs.parameters.fqdn}}'

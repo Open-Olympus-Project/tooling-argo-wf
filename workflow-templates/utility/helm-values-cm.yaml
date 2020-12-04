@@ -1,0 +1,204 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helm-values-templates
+  namespace: argo
+data:
+# The "tokens" -> ${} is going to be replaced in terraform by the template file function.
+
+  # The values file for ingress-nginx
+  k8s-ingress-nginx-values-template.yaml: |
+    controller:
+      service:
+        annotations: 
+          service.beta.kubernetes.io/azure-dns-label-name: ${dns-name}
+          service.beta.kubernetes.io/azure-load-balancer-resource-group: ${resource-group}
+        loadBalancerIP: ${ip-addr}
+  
+  # The values file for argo cd
+  tooling-argo-cd-values-template.yaml: |
+    server:
+      ingress:
+        hosts:
+          - ${fqdn}
+
+        tls:
+        - hosts:
+          - ${fqdn}
+          secretName: argocd-secret # do not change, this is provided by Argo CD
+
+  # The values file for prometheus
+  tooling-prometheus-values-template.yaml: |
+    alertmanager:
+      ## External URL which can access alertmanager
+      baseURL: "https://${fqdn}/alertmanager"
+      prefixURL: "/alertmanager"
+
+      extraFlags:
+      - web.route-prefix=/alertmanager
+
+      ingress:
+        hosts:
+        - ${fqdn}
+
+        tls:
+        - secretName: alertmanager-tls
+          hosts:
+            - ${fqdn}
+
+    server:
+      ## External URL which can access alertmanager
+      ## Maybe same with Ingress host name
+      baseURL: "https://${fqdn}/prometheus"
+      prefixURL: "/prometheus"
+
+      extraFlags:
+      - web.enable-lifecycle
+      - web.route-prefix=/prometheus
+
+
+      ingress:
+        hosts:
+        - ${fqdn}
+
+        tls:
+        - secretName: prometheus-tls
+          hosts:
+            - ${fqdn}
+
+    ## Prometheus server ConfigMap entries
+    ##
+    serverFiles:
+
+      bucket.yml:
+        type: AZURE
+        config:
+          storage_account: "<account-name>"
+          storage_account_key: "<account-key>"
+          container: "thanos"
+          endpoint: ""
+          max_retries: 3
+
+  # The values file for prometheus
+  tooling-grafana-values-template.yaml: |
+    ingress:
+      path: /grafana
+      hosts:
+        - ${fqdn}
+
+      extraPaths:
+      - path: /grafana/(.*)
+        backend:
+          serviceName: grafana
+          servicePort: 80
+
+      tls:
+      - hosts:
+        - ${fqdn}
+        secretName: grafana-tls
+    
+    grafana.ini:
+      server:
+        root_url: https://${fqdn}/grafana
+
+  # The values file for prometheus
+  tooling-thanos-values-template.yaml: |
+    query:
+      # Prefix for API and UI endpoints. This allows thanos UI to be served on a sub-path.
+      # This option is analogous to --web.route-prefix of Promethus.
+      webRoutePrefix: "/thanos-query"
+      # Static prefix for all HTML links and redirect
+      #  URLs in the UI query web interface. Actual
+      #  endpoints are still served on / or the
+      #  web.route-prefix. This allows thanos UI to be
+      #  served behind a reverse proxy that strips a URL
+      #  sub-path.
+      webExternalPrefix: "/thanos-query"
+      
+      # The http endpoint to communicate with other components
+      http:
+        ingress:
+          hosts:
+          - ${fqdn}
+          tls:
+          - secretName: thanos-query-tls
+            hosts:
+              - ${fqdn}
+
+    objstore:
+      type: AZURE
+      config:
+        storage_account: "<account-name>"
+        storage_account_key: "<account-key>"
+        container: "thanos"
+        endpoint: ""
+        max_retries: 3
+
+  # The values file for HA vault
+  tooling-vault-vaules-template.yaml: |
+    server:
+      # Ingress allows ingress services to be created to allow external access
+      # from Kubernetes to access Vault pods.
+      # If deployment is on OpenShift, the following block is ignored.
+      # In order to expose the service, use the route section below
+      ingress:
+        enabled: true
+        annotations: 
+          kubernetes.io/ingress.class: nginx
+          kubernetes.io/tls-acme: "true"
+        hosts:
+          - host: ${fqdn}
+            paths:
+              - /vault
+              - /vault/(.*)
+
+        tls: 
+        - secretName: vault-tls
+          hosts:
+            - ${fqdn}
+
+      # Run Vault in "HA" mode. There are no storage requirements unless audit log
+      # persistence is required.  In HA mode Vault will configure itself to use Consul
+      # for its storage backend.  The default configuration provided will work the Consul
+      # Helm project by default.  It is possible to manually configure Vault to use a
+      # different HA backend.
+      ha:
+        enabled: true
+        replicas: 3
+
+        # Set the api_addr configuration for Vault HA
+        # See https://www.vaultproject.io/docs/configuration#api_addr
+        # If set to null, this will be set to the Pod IP Address
+        apiAddr: null
+
+        # Enables Vault's integrated Raft storage.  Unlike the typical HA modes where
+        # Vault's persistence is external (such as Consul), enabling Raft mode will create
+        # persistent volumes for Vault to store data according to the configuration under server.dataStorage.
+        # The Vault cluster will coordinate leader elections and failovers internally.
+        raft:
+
+          # Enables Raft integrated storage
+          enabled: true
+          # Set the Node Raft ID to the name of the pod
+          setNodeId: false
+
+          # Note: Configuration files are stored in ConfigMaps so sensitive data
+          # such as passwords should be either mounted through extraSecretEnvironmentVars
+          # or through a Kube secret.  For more information see:
+          # https://www.vaultproject.io/docs/platform/k8s/helm/run#protecting-sensitive-vault-configurations
+          config: |
+            ui = true
+
+            listener "tcp" {
+              tls_disable = 1
+              address = "[::]:8200"
+              cluster_address = "[::]:8201"
+            }
+
+            storage "raft" {
+              path = "/vault/data"
+            }
+
+            service_registration "kubernetes" {}
+
+  # The values file for Harbor 

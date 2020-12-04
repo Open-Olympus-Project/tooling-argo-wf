@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: argocd-base-template
+  namespace: argo
+spec:
+  entrypoint: argocd-base
+  templates:
+  - name: argocd-base
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "k8s-secrets"
+        vault.hashicorp.com/agent-inject-secret-id_rsa: "k8s/data/secrets/github-ssh"
+        vault.hashicorp.com/agent-inject-template-id_rsa: |
+          {{- with secret "k8s/data/secrets/github-ssh" -}}
+          {{ .Data.data.github }}
+          {{- end -}}
+    inputs:
+      parameters:
+      - name: server-url
+      - name: script
+      artifacts:
+      - name: values
+        optional: true
+        path: /values
+      - name: kube-config
+        path: /.kube/config
+      - name: argocd
+        path: /bin/argocd
+        mode: 0755
+        http:
+          url: 'https://{{inputs.parameters.server-url}}/argocd/download/argocd-linux-amd64'
+      - name: kubectl
+        path: /bin/kubectl
+        mode: 0755
+        http:
+          url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
+    container:
+      image: alpine
+      command: ["/bin/sh", "-c"]
+      args: 
+        - >
+          export KUBECONFIG=/.kube/config;
+          argocd login {{inputs.parameters.server-url}} --username admin --password $(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2);
+          {{inputs.parameters.script}}
+      env:
+      - name: ARGOCD_OPTS
+        value: '--grpc-web-root-path /argocd'
