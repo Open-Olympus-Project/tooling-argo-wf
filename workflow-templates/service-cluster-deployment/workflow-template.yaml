@@ -39,8 +39,10 @@ spec:
           parameters:
           - name: ssh-url
             value: "{{item.repo}}"
-          - name: name
-            value: "{{item.name}}"
+          - name: context
+            value: "{{item.context}}"
+          - name: service
+            value: "{{item.service}}"
           - name: namespace
             value: "{{item.namespace}}"
           - name: valuesScript
@@ -51,9 +53,9 @@ spec:
           - name: values
             from: '{{steps.terraform.outputs.artifacts.values}}'
         withItems:
-        - { name: 'ingress-nginx', namespace: 'ingress-nginx', valuesScript: '-f /values/k8s-ingress-nginx-values.yaml', repo: 'git@github.com:Open-Dataplatform/k8s-ingress-nginx.git' }
-        - { name: 'cert-manager', namespace: 'cert-manager', valuesScript: ' ', repo: 'git@github.com:Open-Dataplatform/k8s-certmanager.git' }
-        - { name: 'argocd', namespace: 'argocd', valuesScript: '-f /values/tooling-argo-cd-values.yaml', repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git' }
+        - { context: 'k8s', service: 'ingress-nginx', namespace: 'ingress-nginx', valuesScript: '-f /values/k8s-ingress-nginx-values.yaml', repo: 'git@github.com:Open-Dataplatform/k8s-ingress-nginx.git' }
+        - { context: 'k8s', service: 'cert-manager', namespace: 'cert-manager', valuesScript: ' ', repo: 'git@github.com:Open-Dataplatform/k8s-certmanager.git' }
+        - { context: 'tooling', service: 'argocd', namespace: 'argocd', valuesScript: '-f /values/tooling-argo-cd-values.yaml', repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git' }
 
       # Should use the helm wf repo?
       - name: clone-certmanager
@@ -73,7 +75,7 @@ spec:
           parameters:
           - name: script
             value: >
-              kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-manager --timeout=120s;
+              kubectl wait --for=condition=Available deployment/k8s-cert-manager-webhook -n cert-manager --timeout=120s;
               kubectl apply -f ./cert-manager/clusterissuer.yaml -n cert-manager;
           artifacts:
           - name: kube-config
@@ -89,37 +91,16 @@ spec:
           parameters:
           - name: script
             value: >
-              kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=120s;
-              sh /scripts/check-endpoint.sh ingress-nginx-controller ingress-nginx;
+              kubectl wait --for=condition=Available deployment/tooling-argocd-server -n argocd --timeout=120s;
+              sh /scripts/check-endpoint.sh k8s-ingress-nginx-controller ingress-nginx;
           artifacts:
           - name: kube-config
             from: '{{steps.terraform.outputs.artifacts.kube-config}}'
 
-    - - name: argocd-add-repos
-        templateRef:
-          name: argocd-base-template
-          template: argocd-base
-        arguments:
-          artifacts:
-          - name: kube-config
-            from: '{{steps.terraform.outputs.artifacts.kube-config}}'
-          parameters:
-          - name: server-url
-            value: '{{steps.terraform.outputs.parameters.fqdn}}'
-          - name: script
-            value: >
-              argocd repo add {{item}} --ssh-private-key-path /vault/secrets/id_rsa
-        withItems:
-        - git@github.com:Open-Dataplatform/tooling-harbor.git
-        - git@github.com:Open-Dataplatform/tooling-prometheus.git
-        - git@github.com:Open-Dataplatform/tooling-grafana.git
-        - git@github.com:Open-Dataplatform/tooling-thanos.git
-        - git@github.com:Open-Dataplatform/tooling-vault.git
-
-    - - name: argocd-add-apps
+    - - name: argocd-workflow
         templateRef: 
-          name: argocd-base-template
-          template: argocd-base
+          name: argocd-workflow-template
+          template: argocd-workflow
         arguments:
           artifacts:
           - name: kube-config
@@ -129,11 +110,61 @@ spec:
           parameters:
           - name: server-url
             value: '{{steps.terraform.outputs.parameters.fqdn}}'
+          - name: context
+            value: "{{item.context}}"
+          - name: service
+            value: "{{item.service}}"
+          - name: namespace
+            value: "{{item.namespace}}"
+          - name: valuesScript
+            value: "{{item.valuesScript}}"
+          - name: repo
+            value: "{{item.repo}}"
+        withItems:
+        - { context: 'tooling', service: 'prometheus', repo: 'git@github.com:Open-Dataplatform/tooling-prometheus.git', namespace: 'monitoring', valuesScript: '--values-literal-file ../../../values/tooling-prometheus-values.yaml' }
+        - { context: 'tooling', service: 'thanos', repo: 'git@github.com:Open-Dataplatform/tooling-thanos.git', namespace: 'monitoring', valuesScript: '--values-literal-file ../../../values/tooling-thanos-values.yaml' }
+        - { context: 'tooling', service: 'grafana', repo: 'git@github.com:Open-Dataplatform/tooling-grafana.git', namespace: 'grafana', valuesScript: '--values-literal-file ../../../values/tooling-grafana-values.yaml' }
+        - { context: 'tooling', service: 'postgresql-ha', repo: 'git@github.com:Open-Dataplatform/tooling-postgresql-ha.git', namespace: 'vault', valuesScript: '--values-literal-file ../../../values/tooling-postgresql-values.yaml' }
+
+    - - name: argocd-sync-postgres
+        templateRef: 
+          name: argocd-base-template
+          template: argocd-base
+        arguments:
+          artifacts:
+          - name: kube-config
+            from: '{{steps.terraform.outputs.artifacts.kube-config}}'           
+          parameters:
+          - name: server-url
+            value: '{{steps.terraform.outputs.parameters.fqdn}}'
           - name: script
             value: >
-                argocd app create {{item.name}} --repo {{item.repo}} --path .helm --dest-server https://kubernetes.default.svc  --sync-option CreateNamespace=true --dest-namespace {{item.namespace}} --upsert --values-literal-file ../../../values/{{item.valuesName}};
+              argocd app sync tooling-postgresql-ha;
+              sh /scripts/gen-vault-config.sh $(kubectl get secret --namespace vault tooling-postgresql-ha-postgresql -o jsonpath="{.data.postgresql-password}" | base64 -d) vault
+
+    # NEW STEP TO DEPLOY VAULT
+    - - name: argocd-workflow-2
+        templateRef: 
+          name: argocd-workflow-template
+          template: argocd-workflow
+        arguments:
+          artifacts:
+          - name: kube-config
+            from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+          - name: values
+            from: '{{steps.terraform.outputs.artifacts.values}}'            
+          parameters:
+          - name: server-url
+            value: '{{steps.terraform.outputs.parameters.fqdn}}'
+          - name: context
+            value: "{{item.context}}"
+          - name: service
+            value: "{{item.service}}"
+          - name: namespace
+            value: "{{item.namespace}}"
+          - name: valuesScript
+            value: "{{item.valuesScript}}"
+          - name: repo
+            value: "{{item.repo}}"
         withItems:
-        - { name: 'prometheus', repo: 'git@github.com:Open-Dataplatform/tooling-prometheus.git', namespace: 'monitoring', valuesName: 'tooling-prometheus-values.yaml' }
-        - { name: 'thanos', repo: 'git@github.com:Open-Dataplatform/tooling-thanos.git', namespace: 'monitoring', valuesName: 'tooling-thanos-values.yaml' }
-        - { name: 'grafana', repo: 'git@github.com:Open-Dataplatform/tooling-grafana.git', namespace: 'grafana', valuesName: 'tooling-grafana-values.yaml' }
-        - { name: 'vault', repo: 'git@github.com:Open-Dataplatform/tooling-vault.git', namespcae: 'vault', vaulesName: 'tooling-vault-values.yaml' }
+        - { context: 'tooling', service: 'vault', repo: 'git@github.com:Open-Dataplatform/tooling-vault.git', namespace: 'vault', valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml' }

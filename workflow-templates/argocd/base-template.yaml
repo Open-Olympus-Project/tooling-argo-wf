@@ -7,6 +7,10 @@ spec:
   entrypoint: argocd-base
   templates:
   - name: argocd-base
+    volumes:
+    - name: argo-scripts
+      configMap:
+        name: argo-scripts
     metadata:
       annotations:
         vault.hashicorp.com/agent-inject: "true"
@@ -39,6 +43,10 @@ spec:
     container:
       image: alpine
       command: ["/bin/sh", "-c"]
+      volumeMounts:
+      - name: argo-scripts
+        mountPath: "/scripts/"
+        readOnly: true
       args: 
         - >
           export KUBECONFIG=/.kube/config;

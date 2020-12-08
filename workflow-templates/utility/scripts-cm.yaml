@@ -15,3 +15,20 @@ data:
       [ -z "$external_ip" ] && sleep 10
     done
     echo 'End point ready:' && echo $external_ip
+
+  gen-vault-config.sh: |
+    #!/bin/sh
+    echo "
+    ui = true
+    
+    storage \"postgresql\" {
+      # postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
+      connection_url = \"postgres://postgres:$1@tooling-postgresql-ha-postgresql.$2.svc.cluster.local:5432/postgres?sslmode=disable\"
+      table = \"vault_kv_store\"
+      ha_enabled = \"true\"
+      ha_table = \"vault_ha_locks\"
+    }
+
+    service_registration \"kubernetes\" {}" > config.hcl
+
+    kubectl create secret generic vault-storage-config --from-file=config.hcl -n $2 --dry-run=client -o yaml | kubectl apply -f -

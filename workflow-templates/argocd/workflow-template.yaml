@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: argocd-workflow-template
+  namespace: argo
+spec:
+  entrypoint: argocd-workflow
+  templates:
+  - name: argocd-workflow
+    inputs:
+      artifacts:
+      - name: kube-config
+      - name: values
+      parameters:
+      - name: server-url
+      - name: context
+      - name: service
+      - name: namespace
+      - name: repo
+      - name: valuesScript
+    steps:
+    - - name: argocd-add-repo
+        templateRef:
+          name: argocd-base-template
+          template: argocd-base
+        arguments:
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'
+          parameters:
+          - name: server-url
+            value: '{{inputs.parameters.server-url}}'
+          - name: script
+            value: >
+              argocd repo add {{inputs.parameters.repo}} --ssh-private-key-path /vault/secrets/id_rsa
+    
+    - - name: argocd-add-app
+        templateRef: 
+          name: argocd-base-template
+          template: argocd-base
+        arguments:
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'
+          - name: values
+            from: '{{inputs.artifacts.values}}'            
+          parameters:
+          - name: server-url
+            value: '{{inputs.parameters.server-url}}'
+          - name: script
+            value: >
+                argocd app create {{inputs.parameters.context}}-{{inputs.parameters.service}} --repo {{inputs.parameters.repo}} --path .helm --dest-server https://kubernetes.default.svc  --sync-option CreateNamespace=true --dest-namespace {{inputs.parameters.namespace}} --upsert {{inputs.parameters.valuesScript}};

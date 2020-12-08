@@ -12,7 +12,8 @@ spec:
     inputs:
       parameters:
       - name: ssh-url
-      - name: name
+      - name: context
+      - name: service
       - name: namespace
       - name: valuesScript
         default: ' '
@@ -38,7 +39,7 @@ spec:
           - name: action
             value: 'upgrade'
           - name: args
-            value: "{{inputs.parameters.name}} ./.helm"
+            value: "{{inputs.parameters.context}}-{{inputs.parameters.service}} ./.helm"
           - name: flags
             value:
               '
