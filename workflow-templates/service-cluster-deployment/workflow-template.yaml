@@ -165,7 +165,7 @@ spec:
                   service: 'postgresql-ha',
                   repo: 'git@github.com:Open-Dataplatform/tooling-postgresql-ha.git',
                   namespace: 'vault',
-                  valuesScript: '--values-literal-file values-production.yaml --values-literal-file ../../../values/tooling-postgresql-values.yaml',
+                  valuesScript: '--values values-production.yaml --values-literal-file ../../../values/tooling-postgresql-values.yaml',
                 }
               - {
                   context: 'tooling',
