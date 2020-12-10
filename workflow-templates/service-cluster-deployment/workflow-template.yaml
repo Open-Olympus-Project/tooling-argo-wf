@@ -111,11 +111,11 @@ spec:
                   value: >
                     kubectl wait --for=condition=Available deployment/tooling-argocd-server -n argocd --timeout=120s;
                     sh /scripts/check-endpoint.sh k8s-ingress-nginx-controller ingress-nginx;
-                    kubectl wait --for=condition=ready $(kubectl get crs -n argocd -o name) -n argocd
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
 
+        # THIS HAS AN ERROR WHEN DEPLOYING FOR THE FIRST TIME, THIS IS BECAUSE IT DOES NOT TRUST THE ARGOCD ENDPOINT, CAUSE IT HAS NO CERTIFICATE YET
         - - name: argocd-workflow
             templateRef:
               name: argocd-workflow-template
@@ -240,7 +240,7 @@ spec:
                   value: >
                     argocd app sync tooling-vault;
         
-        - - name: vault-gen-unseal-keys
+        - - name: vault-unseal-vault
             templateRef:
               name: vault-workflow-template
               template: vault-workflow

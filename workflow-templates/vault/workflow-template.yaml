@@ -22,7 +22,8 @@ spec:
           - name: script
             value: >
               kubectl -n vault exec -i tooling-vault-0 -- vault operator init -format=json > cluster-keys.json;
-              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -
+              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -;
+              export VAULTAMOUNT=$(kubectl get pods -o=name | grep 'tooling-vault-[0-9]' | wc -l);
               for i in `seq 0 $(($VAULTAMOUNT-1))`
               do
                 for j in `seq 0 2`
