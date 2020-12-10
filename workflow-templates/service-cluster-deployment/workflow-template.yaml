@@ -172,7 +172,7 @@ spec:
                   service: 'harbor',
                   repo: 'git@github.com:Open-Dataplatform/tooling-harbor.git',
                   namespace: 'harbor-system',
-                  valuesScript: '',
+                  valuesScript: '--values-literal-file ../../../values/tooling-harbor-values.yaml',
                 }
 
         - - name: argocd-sync-postgres

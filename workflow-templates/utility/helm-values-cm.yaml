@@ -4,7 +4,22 @@ metadata:
   name: helm-values-templates
   namespace: argo
 data:
-# The "tokens" -> ${} is going to be replaced in terraform by the template file function.
+  # The "tokens" -> ${} is going to be replaced in terraform by the template file function.
+
+  # The values file for Harbor
+  tooling-harbor-values-template.yaml: |
+    expose:
+      ingress:
+        hosts:
+          core: ${fqdn}
+    externalURL: "https://${fqdn}/harbor"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      ingress.kubernetes.io/ssl-redirect: "true"
+      ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      kubernetes.io/ingress.class: nginx
 
   # The values file for ingress-nginx
   k8s-ingress-nginx-values-template.yaml: |
@@ -14,7 +29,7 @@ data:
           service.beta.kubernetes.io/azure-dns-label-name: ${dns-name}
           service.beta.kubernetes.io/azure-load-balancer-resource-group: ${resource-group}
         loadBalancerIP: ${ip-addr}
-  
+
   # The values file for argo cd
   tooling-argo-cd-values-template.yaml: |
     server:
@@ -96,7 +111,7 @@ data:
       - hosts:
         - ${fqdn}
         secretName: grafana-tls
-    
+
     grafana.ini:
       server:
         root_url: https://${fqdn}/grafana
@@ -167,12 +182,11 @@ data:
         enabled: true
         replicas: 3
 
-      
   # The values file for HA postgresql
   tooling-postgresql-values-template.yaml: |
     persistence:
       enabled: true
-   
+
       mountPath: /bitnami/postgresql/vault
 
     postgresql:
@@ -194,4 +208,4 @@ data:
             CONSTRAINT ha_key PRIMARY KEY (ha_key)
           );
 
-  # The values file for Harbor 
+  # The values file for Harbor
