@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: vault-workflow-template
+  namespace: argo
+spec:
+  entrypoint: vault-workflow
+  podGC:
+    strategy: OnWorkflowSuccess
+  templates:
+  - name: vault-workflow
+    inputs:
+      artifacts:
+      - name: kube-config
+    steps:
+    - - name: kubectl-unseal-vault
+        templateRef:
+          name: vault-base-template
+          template: vault-base
+        arguments:
+          parameters:
+          - name: script
+            value: >
+              kubectl -n vault exec -i tooling-vault-0 -- vault operator init -format=json > cluster-keys.json;
+              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -
+              for i in `seq 0 $(($VAULTAMOUNT-1))`
+              do
+                for j in `seq 0 2`
+                do 
+                  while [[ $(kubectl get pods tooling-vault-$i -n vault -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
+                  kubectl -n vault exec -it tooling-vault-$i -- vault operator unseal $(cat cluster-keys.json | jq -r ".unseal_keys_b64[$j]")
+                done
+              done
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'

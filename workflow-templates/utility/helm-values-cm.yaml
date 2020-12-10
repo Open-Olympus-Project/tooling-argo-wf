@@ -181,7 +181,7 @@ data:
       ha:
         enabled: true
         replicas: 3
-
+      
   # The values file for HA postgresql
   tooling-postgresql-values-template.yaml: |
     persistence:
@@ -192,6 +192,8 @@ data:
     postgresql:
       initdbScripts:
         vault.sql: |
+          CREATE DATABASE vault;
+          \c vault;
           CREATE TABLE vault_kv_store (
             parent_path TEXT COLLATE "C" NOT NULL,
             path        TEXT COLLATE "C",
