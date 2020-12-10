@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: vault-base-template
+  namespace: argo
+spec:
+  entrypoint: vault-base
+  templates:
+    - name: vault-base
+      inputs:
+        parameters:
+        - name: script
+        artifacts:
+        - name: kube-config
+          path: /.kube/config
+        - name: kubectl
+          path: /bin/kubectl
+          mode: 0755
+          http:
+            url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
+        - name: jq
+          path: /bin/jq
+          mode: 0755
+          http:
+            url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+      container:
+        image: alpine
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - >
+            export KUBECONFIG=/.kube/config;
+            {{inputs.parameters.script}}
+      
