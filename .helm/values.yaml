@@ -236,13 +236,17 @@ server:
     #   - argo.domain.com
 
     ## Additional Paths for each host
-    # paths:
+    # backends:
     #   - serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
 
+    # paths:
+    #   - path: /argo
+    #   - path: /argo/(.*)
+
     ## TLS configuration.
     ## Secrets must be manually created in the namespace.
-    ##
+    ##  
     # tls:
     #   - secretName: argo-ui-tls
     #     hosts:
@@ -269,7 +273,7 @@ server:
     # redirectUrl: https://argo/oauth2/callback
 
 # Influences the creation of the ConfigMap for the workflow-controller itself.
-useDefaultArtifactRepo: false
+useDefaultArtifactRepo: true
 useStaticCredentials: true
 artifactRepository:
   # archiveLogs will archive the main container logs as an artifact

@@ -21,7 +21,7 @@ spec:
           parameters:
           - name: script
             value: |
-              while [[ $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status.phase}') != "Running" && $(kubectl get pods vault-0 -n vault -o 'jsonpath={..status.containerStatuses[?(@.name=="vault")].ready}') != "true" ]]; do echo "waiting for vault-0" && sleep 10; done;
+              while [[ $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status.phase}') != "Running" && $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={..status.containerStatuses[?(@.name=="vault")].ready}') != "true" ]]; do echo "waiting for vault-0" && sleep 10; done;
               sleep 20;
               kubectl exec -i tooling-vault-0 -n vault -- vault operator init -format=json > cluster-keys.json && sleep 10;
               if [ -s cluster-keys.json ]

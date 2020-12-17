@@ -24,16 +24,25 @@ spec:
     - host: {{ . }}
       http:
         paths:
-          {{- if $.Values.server.ingress.paths }}
-          {{- range $.Values.server.ingress.paths }}
+          {{- if $.Values.server.ingress.backends }}
+          {{- range $.Values.server.ingress.backends }}
           - backend:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
           {{- end }}
+          {{- if $.Values.server.ingress.paths }}
+          {{- range $.Values.server.ingress.paths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ $serviceName }}
+              servicePort: {{ $servicePort }}
+          {{- end }}
+          {{- else }}
           - backend:
               serviceName: {{ $serviceName }}
               servicePort: {{ $servicePort }}
+          {{- end }}
     {{- end -}}
   {{- if .Values.server.ingress.tls }}
   tls:

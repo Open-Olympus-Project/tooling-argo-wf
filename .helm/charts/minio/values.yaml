@@ -14,7 +14,7 @@ clusterDomain: cluster.local
 ##
 image:
   repository: minio/minio
-  tag: RELEASE.2020-01-16T22-40-29Z
+  tag: RELEASE.2020-12-03T05-49-24Z
   pullPolicy: IfNotPresent
 
 ## Set default image, imageTag, and imagePullPolicy for the `mc` (the minio
@@ -22,7 +22,15 @@ image:
 ##
 mcImage:
   repository: minio/mc
-  tag: RELEASE.2020-01-13T22-49-03Z
+  tag: RELEASE.2020-11-25T23-04-07Z
+  pullPolicy: IfNotPresent
+
+## Set default image, imageTag, and imagePullPolicy for the `jq` (the JSON
+## process used to create secret for prometheus ServiceMonitor).
+##
+helmKubectlJqImage:
+  repository: bskim45/helm-kubectl-jq
+  tag: 3.1.0
   pullPolicy: IfNotPresent
 
 ## minio server mode, i.e. standalone or distributed.
@@ -53,12 +61,28 @@ priorityClassName: ""
 ## AccessKey and secretKey is generated when not set
 ## Distributed Minio ref: https://docs.minio.io/docs/distributed-minio-quickstart-guide
 ##
-existingSecret: ""
-accessKey: "AKIAIOSFODNN7EXAMPLE"
-secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+accessKey: ""
+secretKey: ""
 certsPath: "/etc/minio/certs/"
 configPathmc: "/etc/minio/mc/"
 mountPath: "/export"
+
+## Use existing Secret that store following variables:
+##
+## | Chart var             | .data.<key> in Secret    |
+## |:----------------------|:-------------------------|
+## | accessKey             | accesskey                |
+## | secretKey             | secretkey                |
+## | gcsgateway.gcsKeyJson | gcs_key.json             |
+## | s3gateway.accessKey   | awsAccessKeyId           |
+## | s3gateway.secretKey   | awsSecretAccessKey       |
+## | etcd.clientCert       | etcd_client_cert.pem     |
+## | etcd.clientCertKey    | etcd_client_cert_key.pem |
+##
+## All mentioned variables will be ignored in values file.
+## .data.accesskey and .data.secretkey are mandatory,
+## others depend on enabled status of corresponding sections.
+existingSecret: ""
 
 ## Override the root directory which the minio server should serve from.
 ## If left empty, it defaults to the value of {{ .Values.mountPath }}
@@ -79,6 +103,12 @@ tls:
   certSecret: ""
   publicCrt: public.crt
   privateKey: private.key
+
+## Trusted Certificates Settings for Minio. Ref: https://docs.minio.io/docs/how-to-secure-access-to-minio-server-with-tls#install-certificates-from-third-party-cas
+## Bundle multiple trusted certificates into one secret and pass that here. Ref: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+## When using self-signed certificates, remember to include Minio's own certificate in the bundle with key public.crt.
+## If certSecret is left empty and tls is enabled, this chart installs the public certificate from .Values.tls.certSecret.
+trustedCertsSecret: ""
 
 ## Enable persistence using Persistent Volume Claims
 ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
@@ -103,7 +133,7 @@ persistence:
   storageClass: ""
   VolumeName: ""
   accessMode: ReadWriteOnce
-  size: 10Gi
+  size: 500Gi
 
   ## If subPath is set mount a sub folder of a volume instead of the root of the volume.
   ## This is especially handy for volume plugins that don't natively support sub mounting (like glusterfs).
@@ -119,7 +149,7 @@ service:
   type: ClusterIP
   clusterIP: ~
   port: 9000
-  nodePort: 31311
+  nodePort: 32000
 
   ## List of IP addresses at which the Prometheus server service is available
   ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
@@ -134,6 +164,9 @@ service:
 
 ## Configure Ingress based on the documentation here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ##
+
+imagePullSecrets: []
+# - name: "image-pull-secret"
 
 ingress:
   enabled: false
@@ -166,7 +199,7 @@ affinity: {}
 ## Add stateful containers to have security context, if enabled MinIO will run as this
 ## user and group NOTE: securityContext is only enabled if persistence.enabled=true
 securityContext:
-  enabled: false
+  enabled: true
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
@@ -177,28 +210,12 @@ podAnnotations: {}
 # Additional pod labels
 podLabels: {}
 
-## Liveness and Readiness probe values.
-## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
-livenessProbe:
-  initialDelaySeconds: 5
-  periodSeconds: 30
-  timeoutSeconds: 1
-  successThreshold: 1
-  failureThreshold: 3
-readinessProbe:
-  initialDelaySeconds: 60
-  periodSeconds: 15
-  timeoutSeconds: 1
-  successThreshold: 1
-  failureThreshold: 3
-
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
 resources:
   requests:
-    memory: 256Mi
-    cpu: 250m
+    memory: 4Gi
 
 ## Create a bucket after minio install
 ##
@@ -210,6 +227,8 @@ defaultBucket:
   policy: none
   ## Purge if bucket exists already
   purge: false
+  ## set versioning for bucket true|false
+  # versioning: false
 
 ## Create multiple buckets after minio install
 ## Enabling `defaultBucket` will take priority over this list
@@ -222,10 +241,35 @@ buckets: []
   #   policy: none
   #   purge: false
 
+## Additional Annotations for the Kubernetes Batch (make-bucket-job)
+makeBucketJob:
+  podAnnotations:
+  annotations:
+  securityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  resources:
+    requests:
+      memory: 128Mi
+
+## Additional Annotations for the Kubernetes Batch (update-prometheus-secret)
+updatePrometheusJob:
+  podAnnotations:
+  annotations:
+  securityContext:
+    enabled: false
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
 s3gateway:
   enabled: false
   replicas: 4
   serviceEndpoint: ""
+  accessKey: ""
+  secretKey: ""
 
 ## Use minio as an azure blob gateway, you should disable data persistence so no volume claim are created.
 ## https://docs.minio.io/docs/minio-gateway-for-azure
@@ -246,12 +290,6 @@ gcsgateway:
   # Google cloud project-id
   projectId: ""
 
-ossgateway:
-  enabled: false
-  # Number of parallel instances
-  replicas: 4
-  endpointURL: ""
-
 ## Use minio on NAS backend
 ## https://docs.minio.io/docs/minio-gateway-for-nas
 
@@ -263,37 +301,10 @@ nasgateway:
   # a label like "pv: <value>", use value here.
   pv: ~
 
-## Use minio as Backblaze B2 gateway
-## https://github.com/minio/minio/blob/master/docs/gateway/b2.md
-b2gateway:
-  enabled: false
-  # Number of parallel instances
-  replicas: 4
-
 ## Use this field to add environment variables relevant to Minio server. These fields will be passed on to Minio container(s)
 ## when Chart is deployed
 environment:
-  ## To disable Minio Browser, set this value to off
-  MINIO_BROWSER: "on"
-  ## To enable virtual-host-style requests, set this value to Minio host domain name.
-  # MINIO_DOMAIN: ""
-  ## Minio Cache settings, refer: https://docs.minio.io/docs/minio-disk-cache-guide.html
-  # MINIO_CACHE_DRIVES: ""
-  # MINIO_CACHE_EXCLUDE: ""
-  # MINIO_CACHE_EXPIRY: ""
-  # MINIO_CACHE_MAXUSE: ""
-  ## Minio WORM setting, refer: https://docs.minio.io/docs/minio-server-configuration-guide.html
-  # MINIO_WORM: ""
-  ## Minio KMS settings, refer: https://docs.minio.io/docs/minio-kms-quickstart-guide.html
-  # MINIO_SSE_VAULT_ENDPOINT: ""
-  # MINIO_SSE_VAULT_APPROLE_ID: ""
-  # MINIO_SSE_VAULT_APPROLE_SECRET: ""
-  # MINIO_SSE_VAULT_KEY_NAME: ""
-  ## Minio Federation settings, refer: https://docs.minio.io/docs/minio-federation-quickstart-guide.html
-  # MINIO_ETCD_ENDPOINTS: ""
-  # MINIO_PUBLIC_IPS: ""
-  # MINIO_DOMAIN: ""
-  ## Add other environment variables relevant to Minio server here. These values will be added to the container(s) as this Chart is deployed
+  ## Please refer for comprehensive list https://docs.minio.io/docs/minio-server-configuration-guide.html
 
 networkPolicy:
   enabled: false
@@ -322,3 +333,12 @@ metrics:
     # namespace: monitoring
     # interval: 30s
     # scrapeTimeout: 10s
+
+## ETCD settings: https://github.com/minio/minio/blob/master/docs/sts/etcd.md
+## Define endpoints to enable this section.
+etcd:
+  endpoints: []
+  pathPrefix: ""
+  corednsPathPrefix: ""
+  clientCert: ""
+  clientCertKey: ""
