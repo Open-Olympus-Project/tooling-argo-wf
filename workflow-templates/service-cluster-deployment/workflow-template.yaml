@@ -185,6 +185,13 @@ spec:
                   namespace: 'vault',
                   valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml',
                 }
+              - {
+                context: 'tooling',
+                service: 'argo-wf',
+                repo: 'git@github.com:Open-Dataplatform/tooling-argo-wf.git',
+                namespace: 'argo',
+                valuesScript: '--values-literal-file ../../../values/tooling-argo-wf-values.yaml',
+                }
 
         - - name: argocd-sync-postgres
             templateRef:
