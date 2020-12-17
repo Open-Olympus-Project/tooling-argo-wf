@@ -14,7 +14,7 @@ spec:
       - name: resource_group_name
         value: service-aks-infrastructure-{{workflow.parameters.environment_name}}
       - name: storage_account_name
-        value: serviceterraformstate{{workflow.parameters.environment_name}}
+        value: servicetfstate{{workflow.parameters.environment_name}}
       - name: container_name
         value: terraformstate
       - name: key
@@ -94,6 +94,8 @@ spec:
                 - name: script
                   value: >
                     kubectl wait --for=condition=Available deployment/k8s-cert-manager-webhook -n cert-manager --timeout=120s;
+                    while [[ $(kubectl get pods -l app=webhook -n cert-manager -o 'jsonpath={.items[*].status.phase}') != "Running" ]]; do echo "waiting for webhook" && sleep 10; done;
+                    while [[ -z $(kubectl get validatingwebhookconfigurations k8s-cert-manager-webhook -o 'jsonpath={.webhooks[*].clientConfig.caBundle}') ]]; do echo "waiting for caBundle" && sleep 10; done;
                     kubectl apply -f ./cert-manager/clusterissuer.yaml -n cert-manager;
               artifacts:
                 - name: kube-config
@@ -101,7 +103,7 @@ spec:
                 - name: repo
                   from: '{{steps.clone-certmanager.outputs.artifacts.repo}}'
 
-          - name: kubectl-wait-argocd
+        - - name: kubectl-wait-argocd
             templateRef:
               name: kubectl-base-template
               template: kubectl-base
@@ -111,6 +113,7 @@ spec:
                   value: >
                     kubectl wait --for=condition=Available deployment/tooling-argocd-server -n argocd --timeout=120s;
                     sh /scripts/check-endpoint.sh k8s-ingress-nginx-controller ingress-nginx;
+                    while [[ $(kubectl get $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].reason}') != "Issued" && $(kubectl get $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].status}') != "True" ]]; do echo "waiting for crs" && sleep 10; done;
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
@@ -175,6 +178,13 @@ spec:
                   namespace: 'harbor-system',
                   valuesScript: '--values-literal-file ../../../values/tooling-harbor-values.yaml',
                 }
+              - {
+                  context: 'tooling',
+                  service: 'vault',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
+                  namespace: 'vault',
+                  valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml',
+                }
 
         - - name: argocd-sync-postgres
             templateRef:
@@ -192,38 +202,18 @@ spec:
                     argocd app sync tooling-postgresql-ha;
                     sh /scripts/gen-vault-config.sh $(kubectl get secret --namespace vault tooling-postgresql-ha-postgresql -o jsonpath="{.data.postgresql-password}" | base64 -d) vault
 
-        # NEW STEP TO DEPLOY VAULT
-        - - name: argocd-workflow-2
+        - - name: kubectl-wait-postgres
             templateRef:
-              name: argocd-workflow-template
-              template: argocd-workflow
+              name: kubectl-base-template
+              template: kubectl-base
             arguments:
+              parameters:
+                - name: script
+                  value: >
+                    while [[ $(kubectl get pods tooling-postgresql-ha-postgresql-0 -n vault -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for postgres" && sleep 10; done;
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
-                - name: values
-                  from: '{{steps.terraform.outputs.artifacts.values}}'
-              parameters:
-                - name: server-url
-                  value: '{{steps.terraform.outputs.parameters.fqdn}}'
-                - name: context
-                  value: '{{item.context}}'
-                - name: service
-                  value: '{{item.service}}'
-                - name: namespace
-                  value: '{{item.namespace}}'
-                - name: valuesScript
-                  value: '{{item.valuesScript}}'
-                - name: repo
-                  value: '{{item.repo}}'
-            withItems:
-              - {
-                  context: 'tooling',
-                  service: 'vault',
-                  repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
-                  namespace: 'vault',
-                  valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml',
-                }
 
         - - name: argocd-sync-vault
             templateRef:
