@@ -3,7 +3,13 @@ server:
   # only updates base url of resources on client side,
   # it's expected that a proxy server rewrites the request URL and gets rid of this prefix
   # https://github.com/argoproj/argo/issues/716#issuecomment-433213190
-  baseHref: /argo
+  baseHref: /argo/
+
+  # Run the argo server in "secure" mode. Configure this value instead of
+  # "--secure" in extraArgs. See the following documentation for more details
+  # on secure mode:
+  # https://argoproj.github.io/argo/tls/#encrypted
+  secure: true
 
   ## Ingress configuration.
   ## ref: https://kubernetes.io/docs/user-guide/ingress/
@@ -15,8 +21,9 @@ server:
     ##
     annotations:
       kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
       cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/backend-protocol: HTTPS
       
     ## Hostnames.
     ## Must be provided if Ingress is enabled.
@@ -30,8 +37,7 @@ server:
     #     servicePort: "use-annotation"
     
     paths:
-      - path: /argo
-      - path: /argo/(.*)
+      - path: /argo(/|$)(.*)
 
     ## TLS configuration.
     ## Secrets must be manually created in the namespace.
