@@ -20,17 +20,29 @@ spec:
         arguments:
           parameters:
           - name: script
-            value: >
-              kubectl -n vault exec -i tooling-vault-0 -- vault operator init -format=json > cluster-keys.json;
-              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -
-              for i in `seq 0 $(($VAULTAMOUNT-1))`
-              do
-                for j in `seq 0 2`
-                do 
-                  while [[ $(kubectl get pods tooling-vault-$i -n vault -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for pod" && sleep 1; done
-                  kubectl -n vault exec -it tooling-vault-$i -- vault operator unseal $(cat cluster-keys.json | jq -r ".unseal_keys_b64[$j]")
+            value: |
+              while [[ $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status.phase}') != "Running" && $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={..status.containerStatuses[?(@.name=="vault")].ready}') != "true" ]]; do echo "waiting for vault-0" && sleep 10; done;
+              sleep 20;
+              kubectl exec -i tooling-vault-0 -n vault -- vault operator init -format=json > cluster-keys.json && sleep 10;
+              if [ -s cluster-keys.json ]
+              then
+                kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -;
+                export VAULTAMOUNT=$(kubectl get pods -n vault -o=name | grep 'tooling-vault-[0-9]' | wc -l);
+                for i in `seq 0 $(($VAULTAMOUNT-1))`;
+                do
+                  for j in `seq 0 2`;
+                  do
+                    while [[ $(kubectl get pods tooling-vault-$i -n vault -o 'jsonpath={.status.phase}') != "Running" ]]; do echo "waiting for vault-$i" && sleep 5; done;
+                    kubectl exec -i tooling-vault-$i -n vault -- vault operator unseal $(cat cluster-keys.json | jq -r ".unseal_keys_b64[$j]");
+                    sleep 5;
+                  done
                 done
-              done
+              else
+                printf "Failed to get the cluster keys...." >&2;
+                printf "current state:"
+                printf "$(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status}')"
+                exit 69;
+              fi
           artifacts:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
