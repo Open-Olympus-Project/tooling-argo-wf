@@ -175,6 +175,13 @@ spec:
                   namespace: 'harbor-system',
                   valuesScript: '--values-literal-file ../../../values/tooling-harbor-values.yaml',
                 }
+              - {
+                  context: 'tooling',
+                  service: 'jaeger',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-jaeger.git',
+                  namespace: 'monitoring',
+                  valuesScript: '--values-literal-file ../../../values/tooling-jaeger-values.yaml',
+                }
 
         - - name: argocd-sync-postgres
             templateRef:
@@ -239,7 +246,7 @@ spec:
                 - name: script
                   value: >
                     argocd app sync tooling-vault;
-        
+
         - - name: vault-gen-unseal-keys
             templateRef:
               name: vault-workflow-template
