@@ -179,17 +179,24 @@ spec:
                 }
               - {
                   context: 'tooling',
+                  service: 'jaeger',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-jaeger.git',
+                  namespace: 'monitoring',
+                  valuesScript: '--values-literal-file ../../../values/tooling-jaeger-values.yaml',
+                }
+              - {
+                  context: 'tooling',
                   service: 'vault',
                   repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
                   namespace: 'vault',
                   valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml',
                 }
               - {
-                context: 'tooling',
-                service: 'argo-wf',
-                repo: 'git@github.com:Open-Dataplatform/tooling-argo-wf.git',
-                namespace: 'argo',
-                valuesScript: '--values-literal-file ../../../values/tooling-argo-wf-values.yaml',
+                  context: 'tooling',
+                  service: 'argo-wf',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-argo-wf.git',
+                  namespace: 'argo',
+                  valuesScript: '--values-literal-file ../../../values/tooling-argo-wf-values.yaml',
                 }
 
         - - name: argocd-sync-postgres
@@ -236,7 +243,9 @@ spec:
                 - name: script
                   value: >
                     argocd app sync tooling-vault;
-        
+
+        - - name: vault-gen-unseal-keys
+
         - - name: vault-unseal-vault
             templateRef:
               name: vault-workflow-template

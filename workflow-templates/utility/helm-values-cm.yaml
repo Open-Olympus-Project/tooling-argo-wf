@@ -6,6 +6,30 @@ metadata:
 data:
   # The "tokens" -> ${} is going to be replaced in terraform by the template file function.
 
+  # The values file for Jaeger
+  tooling-jaeger-values-template.yaml: |
+    provisionDataStore:
+      cassandra: false
+      elasticsearch: true
+      kafka: false
+    ingress:
+      enabled: true
+      path: /jaeger
+      hosts:
+        - ${fqdn}
+    expose:
+      ingress:
+        hosts:
+          core: ${fqdn}
+  #  externalURL: "https://${fqdn}"
+  #  annotations:
+  #    cert-manager.io/cluster-issuer: letsencrypt
+  #    ingress.kubernetes.io/ssl-redirect: "true"
+  #    ingress.kubernetes.io/proxy-body-size: "0"
+  #    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  #    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  #    kubernetes.io/ingress.class: nginx
+
   # The values file for Harbor
   tooling-harbor-values-template.yaml: |
     expose:
