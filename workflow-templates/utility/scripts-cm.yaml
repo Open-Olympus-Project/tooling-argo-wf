@@ -25,6 +25,8 @@ data:
       # postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
       connection_url = \"postgres://postgres:$1@tooling-postgresql-ha-postgresql.$2.svc.cluster.local:5432/vault?sslmode=disable\"
       table = \"vault_kv_store\"
+      max_idle_connections = 5
+      max_parallel = \"5\" 
       ha_enabled = \"true\"
       ha_table = \"vault_ha_locks\"
     }

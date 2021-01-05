@@ -118,7 +118,6 @@ spec:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
 
-        # THIS HAS AN ERROR WHEN DEPLOYING FOR THE FIRST TIME, THIS IS BECAUSE IT DOES NOT TRUST THE ARGOCD ENDPOINT, CAUSE IT HAS NO CERTIFICATE YET
         - - name: argocd-workflow
             templateRef:
               name: argocd-workflow-template
@@ -231,7 +230,8 @@ spec:
               parameters:
                 - name: script
                   value: >
-                    while [[ $(kubectl get pods tooling-postgresql-ha-postgresql-0 -n vault -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do echo "waiting for postgres" && sleep 10; done;
+                    echo "waiting for postgresql deployment";
+                    kubectl wait --for=condition=available --timeout=240s deployment/tooling-postgresql-ha-pgpool -n vault;
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'

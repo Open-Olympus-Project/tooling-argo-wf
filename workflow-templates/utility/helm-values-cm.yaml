@@ -215,12 +215,11 @@ data:
         enabled: true
         annotations: 
           kubernetes.io/ingress.class: nginx
-          kubernetes.io/tls-acme: "true"
+          cert-manager.io/cluster-issuer: letsencrypt-prod
         hosts:
           - host: ${fqdn}
             paths:
-              - /vault
-              - /vault/(.*)
+              - /vault(/|$)(.*)
 
         tls: 
         - secretName: vault-tls
@@ -233,7 +232,10 @@ data:
       ha:
         enabled: true
         replicas: 3
-
+    # Vault UI
+    ui:
+      enabled: true
+      
   # The values file for HA postgresql
   tooling-postgresql-values-template.yaml: |
     persistence:
