@@ -187,6 +187,13 @@ spec:
                 }
               - {
                   context: 'tooling',
+                  service: 'kibana',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-kibana.git',
+                  namespace: 'monitoring',
+                  valuesScript: '--values-literal-file ../../../values/tooling-kibana-values.yaml',
+                }
+              - {
+                  context: 'tooling',
                   service: 'vault',
                   repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
                   namespace: 'vault',
