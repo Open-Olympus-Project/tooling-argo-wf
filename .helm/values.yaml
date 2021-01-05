@@ -89,7 +89,7 @@ controller:
   serviceAccountAnnotations: {}
   name: workflow-controller
   workflowNamespaces:
-    - argo
+    - default
   containerRuntimeExecutor: docker
   instanceID:
     # `instanceID.enabled` configures the controller to filter workflow submissions
