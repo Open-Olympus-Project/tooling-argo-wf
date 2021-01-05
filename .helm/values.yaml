@@ -15,7 +15,7 @@ installCRD: true
 init:
   # By default the installation will not set an explicit one, which will mean it uses `default` for the namespace the chart is
   # being deployed to.  In RBAC clusters, that will almost certainly fail.  See the NOTES: section of the readme for more info.
-  serviceAccount: "argo"
+  serviceAccount: "argo-workflow"
 
 createAggregateRoles: true
 
@@ -24,13 +24,13 @@ createAggregateRoles: true
 singleNamespace: false
 
 workflow:
-  namespace: ""  # Specify namespace if workflows run in another namespace than argo. This controls where the service account and RBAC resources will be created.
+  namespace: "argo"  # Specify namespace if workflows run in another namespace than argo. This controls where the service account and RBAC resources will be created.
   serviceAccount:
-    create: false  # Specifies whether a service account should be created
+    create: true  # Specifies whether a service account should be created
     annotations: {}
     name: "argo-workflow"  # Service account which is used to run workflows
   rbac:
-    create: false  # adds Role and RoleBinding for the above specified service account to be able to run workflows
+    create: true  # adds Role and RoleBinding for the above specified service account to be able to run workflows
 
 controller:
   image:
