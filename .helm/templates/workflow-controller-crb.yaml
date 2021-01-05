@@ -12,6 +12,9 @@ roleRef:
   name: {{ .Release.Name }}-{{ .Values.controller.name }}
 subjects:
   - kind: ServiceAccount
+    name: default
+    namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
     name: {{ .Values.controller.serviceAccount }}
     namespace: {{ .Release.Namespace }}
 {{- if .Values.controller.workflowNamespaces }}
