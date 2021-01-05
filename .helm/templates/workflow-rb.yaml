@@ -16,9 +16,3 @@ subjects:
   {{- if .Values.workflow.namespace }}
   namespace: {{ .Values.workflow.namespace }}
   {{- end }}
-- kind: ServiceAccount
-  name: default
-  {{- if .Values.workflow.namespace }}
-  namespace: {{ .Values.workflow.namespace }}
-  {{- end }}
-{{- end }}
