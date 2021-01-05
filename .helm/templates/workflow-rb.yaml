@@ -16,3 +16,4 @@ subjects:
   {{- if .Values.workflow.namespace }}
   namespace: {{ .Values.workflow.namespace }}
   {{- end }}
+{{- end }}
