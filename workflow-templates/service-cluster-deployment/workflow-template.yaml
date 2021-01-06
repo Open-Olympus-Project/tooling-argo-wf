@@ -244,8 +244,6 @@ spec:
                   value: >
                     argocd app sync tooling-vault;
 
-        - - name: vault-gen-unseal-keys
-
         - - name: vault-unseal-vault
             templateRef:
               name: vault-workflow-template
@@ -254,3 +252,6 @@ spec:
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+              parameters:
+                - name: server-url
+                  value: '{{steps.terraform.outputs.parameters.fqdn}}'

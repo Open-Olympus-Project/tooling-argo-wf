@@ -23,6 +23,12 @@ spec:
           mode: 0755
           http:
             url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+      retryStrategy:
+        limit: 10
+        backoff:
+          duration: "5"       # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+          factor: 2
+          maxDuration: "5m"   # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
       container:
         image: alpine
         command:

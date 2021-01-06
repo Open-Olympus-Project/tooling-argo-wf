@@ -6,6 +6,10 @@ metadata:
 data:
   # The "tokens" -> ${} is going to be replaced in terraform by the template file function.
 
+  # The values file for prometheus
+  tooling-kibana-values-template.yaml: |
+    #words
+
   # The values file for Jaeger
   tooling-jaeger-values-template.yaml: |
     provisionDataStore:

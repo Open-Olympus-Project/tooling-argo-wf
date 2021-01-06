@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: vault-logged-in-template
+  namespace: argo
+spec:
+  entrypoint: vault-logged-in
+  templates:
+    - name: vault-logged-in
+      inputs:
+        parameters:
+        - name: script
+        artifacts:
+        - name: kube-config
+          path: /.kube/config
+        - name: kubectl
+          path: /bin/kubectl
+          mode: 0755
+          http:
+            url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
+        - name: jq
+          path: /bin/jq
+          mode: 0755
+          http:
+            url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+      metadata:
+        annotations:
+          vault.hashicorp.com/agent-inject: "true"
+          vault.hashicorp.com/role: "k8s-secrets"
+          vault.hashicorp.com/agent-inject-secret-id_rsa: "k8s/data/secrets/github-ssh"
+          vault.hashicorp.com/agent-inject-template-id_rsa: |
+            {{- with secret "k8s/data/secrets/github-ssh" -}}
+            {{ .Data.data.github }}
+            {{- end -}}
+          vault.hashicorp.com/agent-inject-secret-id_rsa.pub: "k8s/data/secrets/github-ssh"
+          vault.hashicorp.com/agent-inject-template-id_rsa.pub: |
+            {{- with secret "k8s/data/secrets/github-ssh" -}}
+            {{ .Data.data.githubpub }}
+            {{- end -}}
+      container:
+        image: alpine
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - >
+            export KUBECONFIG=/.kube/config;
+            export roottoken=$(kubectl get secrets unseal-keys -o 'jsonpath={.data.cluster-keys\.json}' -n vault | base64 -d | jq -r ".root_token");
+            {{inputs.parameters.script}}
+      

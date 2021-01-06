@@ -5,13 +5,20 @@ metadata:
   namespace: argo
 spec:
   entrypoint: docker-build-workflow
- 
+  arguments:
+    parameters:
+    - name: ssh-url
+      value: 'The ssh-url of the repo to build'
+    - name: repo-name
+      value: 'The name of the repo from git'
   templates:
   - name: docker-build-workflow
     inputs:
-      parameters:
+      parameters: 
       - name: ssh-url
+        default: '{{inputs.parameters.ssh-url}}'
       - name: repo-name
+        default: '{{inputs.parameters.repo-name}}'
     steps:
     - - name: git-clone
         templateRef:
@@ -47,6 +54,13 @@ spec:
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/main: unconfined
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "k8s-secrets"
+        vault.hashicorp.com/agent-inject-secret-server-url: "k8s/data/configs/server-url"
+        vault.hashicorp.com/agent-inject-template-server-url: |
+          {{ with secret "k8s/data/configs/server-url" -}}
+            export serverurl="{{ .Data.data.url }}"
+          {{- end }}
     container:
       image: moby/buildkit:master-rootless
       volumeMounts:
@@ -61,15 +75,7 @@ spec:
         - name: DOCKER_CONFIG
           value: /.docker
       command:
-        - buildctl-daemonless.sh
-      args:
-        - build
-        - --frontend
-        - dockerfile.v0
-        - --local
-        - context=./src/
-        - --local
-        - dockerfile=./.docker/
-        - --output
-        - type=image,name=observability.westeurope.cloudapp.azure.com/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true
-      
+        - "/bin/sh"
+      args: 
+        - "-c"
+        - "source /vault/secrets/server-url; buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true"

@@ -10,6 +10,9 @@ spec:
   templates:
   - name: vault-workflow
     inputs:
+      parameters:
+      - name: server-url
+        default: ' '
       artifacts:
       - name: kube-config
     steps:
@@ -21,12 +24,19 @@ spec:
           parameters:
           - name: script
             value: |
-              # while [[ $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status.containerStatuses[?(@.name=="vault")].started}') != "true" ]]; do echo "waiting for vault container to start" && sleep 10; done;
-              # while [[ $(kubectl get pods tooling-vault-0 -n vault -o 'jsonpath={.status.phase}') != "Running" ]]; do echo "waiting for pod to be running" && sleep 10; done;
-              echo "Starting vault init"
+
+              if kubectl get secret unseal-keys -n vault
+              then
+                echo "Keys found in secret"
+                exit 0;
+              else
+                echo "No keys found in secret"
+              fi
+
+              echo "Starting vault init";
               echo "Sleeping for 60s";
               sleep 60;
-              
+
               export VAULTAMOUNT=$(kubectl get pods -n vault -o=name | grep 'tooling-vault-[0-9]' | wc -l);
 
               for i in `seq 0 $(($VAULTAMOUNT-1))`;
@@ -64,3 +74,61 @@ spec:
           artifacts:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
+
+    - - name: kubectl-init-secrets
+        templateRef:
+          name: vault-logged-in-template
+          template: vault-logged-in
+        arguments:
+          parameters:
+          - name: script
+            value: |
+              kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;  
+              kubectl exec -i tooling-vault-0 -n vault -- vault secrets enable -path=k8s kv-v2;
+              kubectl exec -i tooling-vault-0 -n vault -- vault auth enable kubernetes;
+              kubectl exec -i tooling-vault-0 -n vault -- vault policy write k8s-secrets - <<EOF
+                path "k8s/*" {
+                  capabilities = ["read"]
+                }
+              EOF
+              kubectl exec -i tooling-vault-0 -n vault -- vault write auth/kubernetes/config token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt;
+              kubectl exec -i tooling-vault-0 -n vault -- vault write auth/kubernetes/role/k8s-secrets bound_service_account_names=argo,argo-server,argocd-server,default bound_service_account_namespaces=argo,argocd policies=k8s-secrets ttl=24h;
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'
+      
+    - - name: kubectl-add-secrets
+        templateRef:
+          name: vault-logged-in-template
+          template: vault-logged-in
+        arguments:
+          parameters:
+          - name: script
+            value: |
+              kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;
+              {{item.initScript}} {{item.value}} | kubectl exec -i tooling-vault-0 -n vault -- vault kv {{item.action}} {{item.keyPath}} {{item.valueName}}=-;
+          artifacts:
+          - name: kube-config
+            from: '{{inputs.artifacts.kube-config}}'
+        withItems:
+        - {
+            keyPath: k8s/secrets/github-ssh,
+            action: put,
+            valueName: github,
+            value: "cat /vault/secrets/id_rsa",
+            initScript: ""
+          }
+        - {
+            keyPath: k8s/secrets/github-ssh,
+            action: patch,
+            valueName: githubpub,
+            value: "cat /vault/secrets/id_rsa.pub",
+            initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/github-ssh; do sleep 5; done; sleep 10;" 
+          }
+        - {
+            keyPath: k8s/configs/server-url,
+            action: put,
+            valueName: url,
+            value: '{{inputs.parameters.server-url}}',
+            initScript: ""
+          }
