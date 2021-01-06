@@ -7,7 +7,7 @@ images:
   # Secrets with credentials to pull images from a private registry
   pullSecrets: []
   # - name: argo-pull-secret
-  tag: v2.11.7
+  tag: v2.12.3
 
 crdVersion: v1alpha1
 installCRD: true
@@ -28,7 +28,7 @@ workflow:
   serviceAccount:
     create: false  # Specifies whether a service account should be created
     annotations: {}
-    name: "argo-workflow"  # Service account which is used to run workflows
+    name: ""  # Service account which is used to run workflows
   rbac:
     create: false  # adds Role and RoleBinding for the above specified service account to be able to run workflows
 
