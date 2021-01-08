@@ -29,48 +29,55 @@ spec:
               then
                 echo "Keys found in secret"
                 exit 0;
-              else
-                echo "No keys found in secret"
               fi
-
-              echo "Starting vault init";
-              echo "Sleeping for 60s";
-              sleep 60;
 
               export VAULTAMOUNT=$(kubectl get pods -n vault -o=name | grep 'tooling-vault-[0-9]' | wc -l);
 
               for i in `seq 0 $(($VAULTAMOUNT-1))`;
               do
-                echo "trying to gen keys from vault-$i"
-                kubectl exec -i tooling-vault-$i -n vault -- vault operator init -format=json > cluster-keys.json || true;
-                sleep 10;
-                if [ -s cluster-keys.json ]; 
-                then
-                  echo "Got the keys from vault-$i";
-                  break;
-                else
-                  echo "Failed to get keys from vault-$i" >&2;
-                fi
-                sleep 10;
+                while [[ $(kubectl get pods tooling-vault-$i -n vault -o 'jsonpath={.status.phase}') != "Running" ]]; do echo "waiting for vault-$i" && sleep 5; done;
               done
 
-              if [ ! -s cluster-keys.json ]; 
+              echo "Starting vault init";
+              sleep 30;
+
+              
+              echo "trying to gen keys from vault-0"
+              kubectl exec -i tooling-vault-0 -n vault -- vault operator init -format=json > cluster-keys.json || true;
+              sleep 10;
+              if [ -s cluster-keys.json ]; 
               then
+                echo "Got the keys from vault-0";
+                break;
+              else
                 echo "Failed to get keys" >&2;
                 exit 69;
               fi
+              sleep 10;
 
-              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -;
               echo "Unsealing vault..";
               for i in `seq 0 $(($VAULTAMOUNT-1))`;
               do
+                if [ ! $i == 0 ]
+                then 
+                  echo "Joining tooling-vault-$i";
+                  if ! kubectl exec -i tooling-vault-$i -n vault -- vault operator raft join http://tooling-vault-0.tooling-vault-internal:8200;
+                  then
+                    exit 70;
+                  fi
+                  sleep 20;
+                fi
                 for j in `seq 0 2`;
                 do
-                  while [[ $(kubectl get pods tooling-vault-$i -n vault -o 'jsonpath={.status.phase}') != "Running" ]]; do echo "waiting for vault-$i" && sleep 5; done;
-                  kubectl exec -i tooling-vault-$i -n vault -- vault operator unseal $(cat cluster-keys.json | jq -r ".unseal_keys_b64[$j]");
-                  sleep 5;
+                  if kubectl exec -i tooling-vault-$i -n vault -- vault operator unseal $(cat cluster-keys.json | jq -r ".unseal_keys_b64[$j]");
+                  then 
+                    sleep 15;
+                  else
+                    exit 71;
+                  fi
                 done
               done
+              kubectl create secret generic unseal-keys --from-file=cluster-keys.json -n vault --dry-run=client -o yaml | kubectl apply -n vault -f -;
           artifacts:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
@@ -83,7 +90,6 @@ spec:
           parameters:
           - name: script
             value: |
-              kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;  
               kubectl exec -i tooling-vault-0 -n vault -- vault secrets enable -path=k8s kv-v2;
               kubectl exec -i tooling-vault-0 -n vault -- vault auth enable kubernetes;
               kubectl exec -i tooling-vault-0 -n vault -- vault policy write k8s-secrets - <<EOF
@@ -105,7 +111,6 @@ spec:
           parameters:
           - name: script
             value: |
-              kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;
               {{item.initScript}} {{item.value}} | kubectl exec -i tooling-vault-0 -n vault -- vault kv {{item.action}} {{item.keyPath}} {{item.valueName}}=-;
           artifacts:
           - name: kube-config
@@ -131,4 +136,18 @@ spec:
             valueName: url,
             value: '{{inputs.parameters.server-url}}',
             initScript: ""
+          }
+        - {
+            keyPath: k8s/secrets/harbor,
+            action: put,
+            valueName: username,
+            value: "cat /vault/secrets/harbor",
+            initScript: ""
+          }
+        - {
+            keyPath: k8s/secrets/harbor,
+            action: patch,
+            valueName: password,
+            value: "cat /vault/secrets/harbor",
+            initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/harbor; do sleep 5; done; sleep 10;" 
           }

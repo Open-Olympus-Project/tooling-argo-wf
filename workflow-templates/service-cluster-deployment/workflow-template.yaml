@@ -113,7 +113,7 @@ spec:
                   value: >
                     kubectl wait --for=condition=Available deployment/tooling-argocd-server -n argocd --timeout=120s;
                     sh /scripts/check-endpoint.sh k8s-ingress-nginx-controller ingress-nginx;
-                    while [[ $(kubectl get $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].reason}') != "Issued" && $(kubectl get $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].status}') != "True" ]]; do echo "waiting for crs" && sleep 10; done;
+                    while [[ $(kubectl get crs $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].reason}') != "Issued" && $(kubectl get $(kubectl get crs -n argocd -o name) -n argocd -o 'jsonpath={.status.conditions[*].status}') != "True" ]]; do echo "waiting for crs" && sleep 10; done;
               artifacts:
                 - name: kube-config
                   from: '{{steps.terraform.outputs.artifacts.kube-config}}'
@@ -163,13 +163,13 @@ spec:
                   namespace: 'grafana',
                   valuesScript: '--values-literal-file ../../../values/tooling-grafana-values.yaml',
                 }
-              - {
-                  context: 'tooling',
-                  service: 'postgresql-ha',
-                  repo: 'git@github.com:Open-Dataplatform/tooling-postgresql-ha.git',
-                  namespace: 'vault',
-                  valuesScript: '--values-literal-file ../../../values/tooling-postgresql-values.yaml',
-                }
+              # - {
+              #     context: 'tooling',
+              #     service: 'postgresql-ha',
+              #     repo: 'git@github.com:Open-Dataplatform/tooling-postgresql-ha.git',
+              #     namespace: 'vault',
+              #     valuesScript: '--values-literal-file ../../../values/tooling-postgresql-values.yaml',
+              #   }
               - {
                   context: 'tooling',
                   service: 'harbor',
@@ -206,35 +206,35 @@ spec:
                   valuesScript: '--values-literal-file ../../../values/tooling-argo-wf-values.yaml',
                 }
 
-        - - name: argocd-sync-postgres
-            templateRef:
-              name: argocd-base-template
-              template: argocd-base
-            arguments:
-              artifacts:
-                - name: kube-config
-                  from: '{{steps.terraform.outputs.artifacts.kube-config}}'
-              parameters:
-                - name: server-url
-                  value: '{{steps.terraform.outputs.parameters.fqdn}}'
-                - name: script
-                  value: >
-                    argocd app sync tooling-postgresql-ha;
-                    sh /scripts/gen-vault-config.sh $(kubectl get secret --namespace vault tooling-postgresql-ha-postgresql -o jsonpath="{.data.postgresql-password}" | base64 -d) vault
+        # - - name: argocd-sync-postgres
+        #     templateRef:
+        #       name: argocd-base-template
+        #       template: argocd-base
+        #     arguments:
+        #       artifacts:
+        #         - name: kube-config
+        #           from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+        #       parameters:
+        #         - name: server-url
+        #           value: '{{steps.terraform.outputs.parameters.fqdn}}'
+        #         - name: script
+        #           value: >
+        #             argocd app sync tooling-postgresql-ha;
+        #             sh /scripts/gen-vault-config.sh $(kubectl get secret --namespace vault tooling-postgresql-ha-postgresql -o jsonpath="{.data.postgresql-password}" | base64 -d) vault
 
-        - - name: kubectl-wait-postgres
-            templateRef:
-              name: kubectl-base-template
-              template: kubectl-base
-            arguments:
-              parameters:
-                - name: script
-                  value: >
-                    echo "waiting for postgresql deployment";
-                    kubectl wait --for=condition=available --timeout=240s deployment/tooling-postgresql-ha-pgpool -n vault;
-              artifacts:
-                - name: kube-config
-                  from: '{{steps.terraform.outputs.artifacts.kube-config}}'
+        # - - name: kubectl-wait-postgres
+        #     templateRef:
+        #       name: kubectl-base-template
+        #       template: kubectl-base
+        #     arguments:
+        #       parameters:
+        #         - name: script
+        #           value: >
+        #             echo "waiting for postgresql deployment";
+        #             kubectl wait --for=condition=available --timeout=240s deployment/tooling-postgresql-ha-pgpool -n vault;
+        #       artifacts:
+        #         - name: kube-config
+        #           from: '{{steps.terraform.outputs.artifacts.kube-config}}'
 
         - - name: argocd-sync-vault
             templateRef:

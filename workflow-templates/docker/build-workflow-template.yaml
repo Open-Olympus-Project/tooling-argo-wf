@@ -28,6 +28,14 @@ spec:
           parameters:
           - name: ssh-url
             value: "{{inputs.parameters.ssh-url}}"
+      - name: harbor-create-project-wf
+        templateRef:
+          name: tooling-harbor-create-project-wf-tp
+          template: workflow
+        arguments:
+         parameters:
+          - name: repo-name
+            value: "{{inputs.parameters.repo-name}}"
     - - name: docker-build
         template: buildkit
         arguments:

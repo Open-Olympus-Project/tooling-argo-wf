@@ -204,12 +204,12 @@ data:
   # The values file for HA vault
   tooling-vault-values-template.yaml: |
     server:
-      extraVolumes:
-      - type: secret
-        name: vault-storage-config
-        path: null
+      # extraVolumes:
+      # - type: secret
+      #   name: vault-storage-config
+      #   path: null
         
-      extraArgs: -config=/vault/userconfig/vault-storage-config/config.hcl
+      # extraArgs: -config=/vault/userconfig/vault-storage-config/config.hcl
 
       ingress:
         enabled: true
@@ -232,6 +232,9 @@ data:
       ha:
         enabled: true
         replicas: 3
+
+        raft:
+          enabled: true
     # Vault UI
     ui:
       enabled: true

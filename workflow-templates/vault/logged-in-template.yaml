@@ -37,6 +37,12 @@ spec:
             {{- with secret "k8s/data/secrets/github-ssh" -}}
             {{ .Data.data.githubpub }}
             {{- end -}}
+          vault.hashicorp.com/agent-inject-secret-harbor-creds: "k8s/data/secrets/harbor"
+          vault.hashicorp.com/agent-inject-template-harbor-creds: |
+            {{ with secret "k8s/data/secrets/harbor" -}}
+              export harborUser="{{ .Data.data.username }}"
+              export harborPass="{{ .Data.data.password }}"
+            {{- end }}
       container:
         image: alpine
         command:
@@ -46,5 +52,6 @@ spec:
           - >
             export KUBECONFIG=/.kube/config;
             export roottoken=$(kubectl get secrets unseal-keys -o 'jsonpath={.data.cluster-keys\.json}' -n vault | base64 -d | jq -r ".root_token");
+            kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;  
             {{inputs.parameters.script}}
       
