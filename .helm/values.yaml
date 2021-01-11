@@ -118,7 +118,7 @@ controller:
   # The list of environment variable definitions to be added to the controller
   # manages container verbatim.
   extraEnv: []
-  replicas: 1
+  replicas: 3
   pdb:
     enabled: false
     # minAvailable: 1
