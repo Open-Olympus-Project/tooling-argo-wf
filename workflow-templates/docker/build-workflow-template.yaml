@@ -53,12 +53,6 @@ spec:
       artifacts:
       - name: repo
         path: /repo
-    # Mount the configuration so we can push the image.
-    # This should create the /.docker/config.json file.
-    volumes:
-      - name: docker-config
-        secret:
-          secretName: 'docker-config-{{inputs.parameters.repo-name}}-file'
     metadata:
       annotations:
         container.apparmor.security.beta.kubernetes.io/main: unconfined
@@ -69,11 +63,13 @@ spec:
           {{ with secret "k8s/data/configs/server-url" -}}
             export serverurl="{{ .Data.data.url }}"
           {{- end }}
+        vault.hashicorp.com/agent-inject-secret-config.json: "k8s/data/tooling-harbor-robot-accounts/{{inputs.parameters.repo-name}}"
+        vault.hashicorp.com/agent-inject-template-config.json: |
+          {{ with secret "k8s/data/tooling-harbor-robot-accounts/{{inputs.parameters.repo-name}}" -}}
+            {{ .Data.data.authFile }}
+          {{- end }}
     container:
       image: moby/buildkit:master-rootless
-      volumeMounts:
-        - name: docker-config
-          mountPath: /.docker
       workingDir: /repo
       env:
         - name: BUILDKITD_FLAGS
@@ -81,9 +77,10 @@ spec:
         - name: BUILDCTL_CONNECT_RETRIES_MAX
           value: "20"
         - name: DOCKER_CONFIG
-          value: /.docker
+          value: /vault/secrets
       command:
         - "/bin/sh"
       args: 
         - "-c"
-        - "source /vault/secrets/server-url; buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true"
+        - "source /vault/secrets/server-url;
+          buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true"

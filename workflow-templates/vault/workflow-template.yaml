@@ -151,3 +151,10 @@ spec:
             value: "cat /vault/secrets/harbor",
             initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/harbor; do sleep 5; done; sleep 10;" 
           }
+        - {
+            keyPath: k8s/secrets/vault,
+            action: put,
+            valueName: root_token,
+            value: "echo $roottoken",
+            initScript: "" 
+          }

@@ -32,3 +32,21 @@ spec:
           parameters:
             - name: repo-name
               value: "{{inputs.parameters.repo-name}}"
+    - - name: vault-add-robot-crds
+        templateRef:
+          name: tooling-vault-logged-in-url-template
+          template: vault-logged-in-url
+        when: "{{steps.harbor-create-project.outputs.parameters.project-exists}} == false"
+        arguments:
+          parameters:
+            - name: script
+              value: |
+                {{item.initScript}} {{item.value}} | vault kv {{item.action}} {{item.keyPath}} {{item.valueName}}=-;
+        withItems:
+        - {
+            keyPath: "k8s/tooling-harbor-robot-accounts/{{inputs.parameters.repo-name}}",
+            action: put,
+            valueName: authFile,
+            value: "echo {{steps.harbor-create-robot-account.outputs.parameters.config-json}} | tr -d ' ' | tr -d '\n'",
+            initScript: ""
+          }
