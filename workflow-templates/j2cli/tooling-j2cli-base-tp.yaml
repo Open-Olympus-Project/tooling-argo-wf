@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: tooling-j2cli-base-tp
+  namespace: argo
+spec:
+  entrypoint: j2cli-base
+  templates:
+    - name: j2cli-base
+      inputs:
+        parameters:
+        - name: script
+        - name: server-url
+        artifacts:
+        - name: repo
+          path: /repo
+        - name: values
+          path: /values.env
+      container:
+        workingDir: /
+        image: "{{inputs.parameters.server-url}}/tooling-j2cli/tooling-j2cli"
+        command:
+          - "/bin/sh"
+          - "-c"
+        args:
+          - > 
+            {{ inputs.parameters.script }}
+      outputs:
+        artifacts:
+        - name: value-file
+          optional: true
+          path: '/value.yaml'

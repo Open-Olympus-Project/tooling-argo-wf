@@ -1,0 +1,60 @@
+kind: WorkflowTemplate
+metadata:
+  name: tooling-j2cli-wf-tp
+  namespace: argo
+spec:
+  entrypoint: j2cli-wf
+  templates:
+  - name: j2cli-wf
+    inputs:
+      parameters:
+      - name: repo
+      artifacts:
+      - name: values
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "k8s-secrets"
+        vault.hashicorp.com/agent-inject-secret-server-url: "k8s/data/configs/server-url"
+        vault.hashicorp.com/agent-inject-template-server-url: |
+          {{ with secret "k8s/data/configs/server-url" -}}
+            export serverUrl="{{ .Data.data.url }}"
+          {{- end }}
+    steps:
+    - - name: git-clone
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url
+            value: '{{inputs.parameters.repo}}'
+
+      - name: get-server-url
+        templateRef:
+          name: utility-get-server-url 
+          template: get-server-url
+
+    - - name: j2cli-build-value-file
+        templateRef:
+          name: tooling-j2cli-base-tp
+          template: j2cli-base
+        arguments:
+          artifacts:
+          - name: repo
+            from: '{{steps.git-clone.outputs.artifacts.repo}}'
+          - name: values
+            from: '{{inputs.artifacts.values}}'
+          parameters:
+          - name: server-url
+            value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+          - name: script
+            value: >
+              j2 --format=env /repo/.setup/values-template.j2 /values.env -o /value.yaml
+
+    outputs:
+      artifacts:
+      - name: value-file
+        from: '{{steps.j2cli-build-value-file.outputs.artifacts.value-file}}'
+      - name: repo
+        from: '{{steps.git-clone.outputs.artifacts.repo}}'

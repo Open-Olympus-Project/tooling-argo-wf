@@ -57,7 +57,7 @@ spec:
                   context: 'k8s',
                   service: 'ingress-nginx',
                   namespace: 'ingress-nginx',
-                  valuesScript: '-f /values/k8s-ingress-nginx-values.yaml',
+                  valuesScript: '-f /value.yaml',
                   repo: 'git@github.com:Open-Dataplatform/k8s-ingress-nginx.git',
                 }
               - {
@@ -71,7 +71,7 @@ spec:
                   context: 'tooling',
                   service: 'argocd',
                   namespace: 'argocd',
-                  valuesScript: '-f /values/tooling-argo-cd-values.yaml',
+                  valuesScript: '-f /value.yaml',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
                 }
 
@@ -147,94 +147,57 @@ spec:
                   service: 'prometheus',
                   repo: 'git@github.com:Open-Dataplatform/tooling-prometheus.git',
                   namespace: 'monitoring',
-                  valuesScript: '--values-literal-file ../../../values/tooling-prometheus-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'thanos',
                   repo: 'git@github.com:Open-Dataplatform/tooling-thanos.git',
                   namespace: 'monitoring',
-                  valuesScript: '--values-literal-file ../../../values/tooling-thanos-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'grafana',
                   repo: 'git@github.com:Open-Dataplatform/tooling-grafana.git',
                   namespace: 'grafana',
-                  valuesScript: '--values-literal-file ../../../values/tooling-grafana-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
-              # - {
-              #     context: 'tooling',
-              #     service: 'postgresql-ha',
-              #     repo: 'git@github.com:Open-Dataplatform/tooling-postgresql-ha.git',
-              #     namespace: 'vault',
-              #     valuesScript: '--values-literal-file ../../../values/tooling-postgresql-values.yaml',
-              #   }
               - {
                   context: 'tooling',
                   service: 'harbor',
                   repo: 'git@github.com:Open-Dataplatform/tooling-harbor.git',
                   namespace: 'harbor-system',
-                  valuesScript: '--values-literal-file ../../../values/tooling-harbor-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'jaeger',
                   repo: 'git@github.com:Open-Dataplatform/tooling-jaeger.git',
                   namespace: 'monitoring',
-                  valuesScript: '--values-literal-file ../../../values/tooling-jaeger-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'kibana',
                   repo: 'git@github.com:Open-Dataplatform/tooling-kibana.git',
                   namespace: 'monitoring',
-                  valuesScript: '--values-literal-file ../../../values/tooling-kibana-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'vault',
                   repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
                   namespace: 'vault',
-                  valuesScript: '--values-literal-file ../../../values/tooling-vault-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
                   context: 'tooling',
                   service: 'argo-wf',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-wf.git',
                   namespace: 'argo',
-                  valuesScript: '--values-literal-file ../../../values/tooling-argo-wf-values.yaml',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
                 }
-
-        # - - name: argocd-sync-postgres
-        #     templateRef:
-        #       name: argocd-base-template
-        #       template: argocd-base
-        #     arguments:
-        #       artifacts:
-        #         - name: kube-config
-        #           from: '{{steps.terraform.outputs.artifacts.kube-config}}'
-        #       parameters:
-        #         - name: server-url
-        #           value: '{{steps.terraform.outputs.parameters.fqdn}}'
-        #         - name: script
-        #           value: >
-        #             argocd app sync tooling-postgresql-ha;
-        #             sh /scripts/gen-vault-config.sh $(kubectl get secret --namespace vault tooling-postgresql-ha-postgresql -o jsonpath="{.data.postgresql-password}" | base64 -d) vault
-
-        # - - name: kubectl-wait-postgres
-        #     templateRef:
-        #       name: kubectl-base-template
-        #       template: kubectl-base
-        #     arguments:
-        #       parameters:
-        #         - name: script
-        #           value: >
-        #             echo "waiting for postgresql deployment";
-        #             kubectl wait --for=condition=available --timeout=240s deployment/tooling-postgresql-ha-pgpool -n vault;
-        #       artifacts:
-        #         - name: kube-config
-        #           from: '{{steps.terraform.outputs.artifacts.kube-config}}'
 
         - - name: argocd-sync-vault
             templateRef:

@@ -7,10 +7,6 @@ spec:
   entrypoint: terraform-base
   templates:
   - name: terraform-base
-    volumes:
-    - name: helm-values
-      configMap:
-        name: helm-values-templates
     inputs:
       artifacts:
       - name: terraform-folder
@@ -25,10 +21,6 @@ spec:
       args:
        - terraform {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.terraform-path}}
       workingDir: /src/terraform
-      volumeMounts:
-      - name: helm-values
-        mountPath: "/value-templates/"
-        readOnly: true
       env:
       - name: ARM_CLIENT_ID
         valueFrom:
@@ -60,7 +52,7 @@ spec:
         path: '/src/terraform/config'
       - name: values
         optional: true
-        path: '/values'
+        path: '/src/terraform/values'
       parameters:
       - name: fqdn
         valueFrom:

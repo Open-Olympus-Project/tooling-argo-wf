@@ -14,9 +14,9 @@ spec:
         - name: flags
           default: ''
         artifacts:
-        - name: values
+        - name: value
           optional: true
-          path: /values
+          path: /value.yaml
         - name: chart
           path: /chart
         - name: kube-config

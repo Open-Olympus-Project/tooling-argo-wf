@@ -33,7 +33,19 @@ spec:
           - name: script
             value: >
               argocd repo add {{inputs.parameters.repo}} --ssh-private-key-path /vault/secrets/id_rsa
-    
+      
+      - name: template-value-file
+        templateRef:
+          name: tooling-j2cli-wf-tp
+          template: j2cli-wf
+        arguments:
+          parameters:
+          - name: repo
+            value: '{{inputs.parameters.repo}}'
+          artifacts:
+          - name: values
+            from: '{{inputs.artifacts.values}}'
+
     - - name: argocd-add-app
         templateRef: 
           name: argocd-base-template
@@ -42,8 +54,8 @@ spec:
           artifacts:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
-          - name: values
-            from: '{{inputs.artifacts.values}}'            
+          - name: value
+            from: '{{steps.template-value-file.outputs.artifacts.value-file}}'            
           parameters:
           - name: server-url
             value: '{{inputs.parameters.server-url}}'

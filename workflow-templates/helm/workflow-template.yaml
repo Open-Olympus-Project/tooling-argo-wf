@@ -21,14 +21,17 @@ spec:
       - name: values
       - name: kube-config
     steps:
-    - - name: clone
+    - - name: template-value-file
         templateRef:
-          name: git-clone-template
-          template: git-clone
+          name: tooling-j2cli-wf-tp
+          template: j2cli-wf
         arguments:
           parameters:
-          - name: ssh-url 
-            value: "{{inputs.parameters.ssh-url}}"
+          - name: repo
+            value: '{{inputs.parameters.ssh-url}}'
+          artifacts:
+          - name: values
+            from: '{{inputs.artifacts.values}}'
     
     - - name: helm-install
         templateRef:
@@ -52,6 +55,6 @@ spec:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
           - name: chart
-            from: '{{steps.clone.outputs.artifacts.repo}}'
-          - name: values
-            from: '{{inputs.artifacts.values}}'
+            from: '{{steps.template-value-file.outputs.artifacts.repo}}'
+          - name: value
+            from: '{{steps.template-value-file.outputs.artifacts.value-file}}'
