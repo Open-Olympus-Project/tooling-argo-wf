@@ -24,18 +24,18 @@ server:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
       cert-manager.io/cluster-issuer: letsencrypt-prod
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-      
+
     ## Hostnames.
     ## Must be provided if Ingress is enabled.
     ##
     hosts:
-      - ${fqdn}
+      - {{ fqdn }}
 
     ## Additional Paths for each host
     # backends:
     #   - serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
-    
+
     paths:
       - path: /argo(/|$)(.*)
 
@@ -45,7 +45,7 @@ server:
     tls:
       - secretName: argo-ui-tls
         hosts:
-          - ${fqdn}
+          - {{ fqdn }}
 minio:
   # If set to true then chart installs minio and generate according artifactRepository section in workflow controller config map
   install: true
