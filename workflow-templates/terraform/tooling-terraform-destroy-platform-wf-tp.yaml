@@ -1,0 +1,97 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: tooling-terraform-destroy-platform-wf-tp
+  namespace: argo
+spec:
+  entrypoint: terraform-workflow
+  podGC:
+    strategy: OnWorkflowSuccess
+  templates:
+  - name: terraform-workflow 
+    inputs:
+      parameters:
+      - name: environment_name
+        default: dev
+      - name: resource_group_name
+        default: service-aks-infrastructure-dev
+      - name: storage_account_name
+        default: servicetfstatedev
+      - name: container_name
+        default: terraformstate
+      - name: key
+        default: k8s.tfstate
+    steps:
+    - - name: git-clone-terraform
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url
+            value: "git@github.com:Open-Dataplatform/platform.git"
+
+    - - name: azure-terraform-init
+        templateRef:
+          name: tooling-terraform-base-tp
+          template: terraform-base
+        arguments:
+          parameters:
+          - name: action
+            value: init
+          - name: args
+            value: -backend-config="storage_account_name={{inputs.parameters.storage_account_name}}" -backend-config="container_name={{inputs.parameters.container_name}}" -backend-config="key={{inputs.parameters.key}}" -backend-config="resource_group_name={{inputs.parameters.resource_group_name}}" 
+          - name: terraform-path
+            value: ./azure
+          artifacts:
+          - name: terraform-folder
+            from: "{{steps.git-clone-terraform.outputs.artifacts.repo}}"
+
+    - - name: azure-terraform-plan-destroy
+        templateRef:
+          name: tooling-terraform-base-tp
+          template: terraform-base
+        arguments:
+          parameters:
+          - name: action
+            value: plan
+          - name: args
+            value: '-lock=false -destroy -var=environmentName={{inputs.parameters.environment_name}}'
+          - name: terraform-path
+            value: ./azure
+          artifacts:
+          - name: terraform-folder
+            from: "{{steps.azure-terraform-init.outputs.artifacts.terraform-folder}}"
+
+    - - name: azure-terraform-destroy
+        templateRef:
+          name: tooling-terraform-base-tp
+          template: terraform-base
+        arguments:
+          parameters:
+            - name: action
+              value: destroy
+            - name: args
+              value: "-auto-approve"
+            - name: terraform-path
+              value: ./azure
+          artifacts:
+            - name: terraform-folder
+              from: "{{steps.azure-terraform-init.outputs.artifacts.terraform-folder}}"
+    
+    - - name: infrastructure-rg-destroy
+        templateRef:
+          name:  az-base-template
+          template:  az-base
+        arguments:
+          parameters:
+          - name: script
+            value: |
+              if [[ $(az group exists -n {{inputs.parameters.resource_group_name}}) ]] ;
+              then
+                echo "{{inputs.parameters.resource_group_name}} exists"
+                echo "Deleting..."
+                az group delete -n {{inputs.parameters.resource_group_name}} --yes
+              else
+                echo "{{inputs.parameters.resource_group_name}} does not exist.."
+              fi

@@ -11,25 +11,25 @@ spec:
     parameters:
       - name: environment_name
         value: mht
-      - name: resource_group_name
-        value: service-aks-infrastructure-{{workflow.parameters.environment_name}}
-      - name: storage_account_name
-        value: servicetfstate{{workflow.parameters.environment_name}}
-      - name: container_name
-        value: terraformstate
-      - name: key
-        value: k8s.tfstate
   templates:
     - name: service-cluster-deployment
+      inputs:
+        parameters:
+        - name: environment_name
+          default: "{{workflow.parameters.environment_name}}"
       steps:
         - - name: terraform
             templateRef:
-              name: terraform-workflow-template
+              name: tooling-terraform-wf-tp
               template: terraform-workflow
             arguments:
               parameters:
-                - name: environmentName
-                  value: mht
+              - name: environment_name
+                value: "{{inputs.parameters.environment_name}}"
+              - name: resource_group_name
+                value: service-aks-infrastructure-{{inputs.parameters.environment_name}}
+              - name: storage_account_name
+                value: servicetfstate{{inputs.parameters.environment_name}}
 
         - - name: helm
             templateRef:

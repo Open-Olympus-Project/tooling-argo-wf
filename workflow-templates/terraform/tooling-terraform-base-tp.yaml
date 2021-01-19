@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: terraform-base-template
+  name: tooling-terraform-base-tp
   namespace: argo
 spec:
   entrypoint: terraform-base

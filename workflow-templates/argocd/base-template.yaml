@@ -43,9 +43,9 @@ spec:
     retryStrategy:
       limit: 10
       backoff:
-        duration: "10"       # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+        duration: "30"       # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
         factor: 2
-        maxDuration: "5m" # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
+        maxDuration: "10m" # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
     container:
       image: alpine
       command: ["/bin/sh", "-c"]

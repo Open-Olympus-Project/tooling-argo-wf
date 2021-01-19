@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: utility-gen-date-for-cron-job
+  namespace: argo
+spec:
+  entrypoint: gen-date
+  templates:
+  - name: gen-date
+    script:
+      image: alpine
+      command: [/bin/sh]
+      source: |
+        printf "$(date +%s | cut -c0-5)"
