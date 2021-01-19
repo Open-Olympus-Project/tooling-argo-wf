@@ -15,8 +15,8 @@ spec:
     - name: service-cluster-deployment
       inputs:
         parameters:
-        - name: environment_name
-          default: "{{workflow.parameters.environment_name}}"
+          - name: environment_name
+            default: '{{workflow.parameters.environment_name}}'
       steps:
         - - name: terraform
             templateRef:
@@ -24,12 +24,12 @@ spec:
               template: terraform-workflow
             arguments:
               parameters:
-              - name: environment_name
-                value: "{{inputs.parameters.environment_name}}"
-              - name: resource_group_name
-                value: service-aks-infrastructure-{{inputs.parameters.environment_name}}
-              - name: storage_account_name
-                value: servicetfstate{{inputs.parameters.environment_name}}
+                - name: environment_name
+                  value: '{{inputs.parameters.environment_name}}'
+                - name: resource_group_name
+                  value: service-aks-infrastructure-{{inputs.parameters.environment_name}}
+                - name: storage_account_name
+                  value: servicetfstate{{inputs.parameters.environment_name}}
 
         - - name: helm
             templateRef:
@@ -181,7 +181,14 @@ spec:
                   context: 'tooling',
                   service: 'kibana',
                   repo: 'git@github.com:Open-Dataplatform/tooling-kibana.git',
-                  namespace: 'monitoring',
+                  namespace: 'monitoring-kibana',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
+                }
+              - {
+                  context: 'tooling',
+                  service: 'kibana-elasticsearch',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-kibana-elasticsearch.git',
+                  namespace: 'monitoring-kibana',
                   valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
