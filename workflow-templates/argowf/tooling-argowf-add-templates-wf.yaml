@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: tooling-argo-wf-add-tp
+  namespace: argo
+spec:
+  entrypoint: add-tp
+  podGC:
+    strategy: OnWorkflowSuccess
+  templates:
+  - name: add-tp
+    inputs:
+      artifacts:
+      - name: kube-config
+    steps:
+    - - name: git-clone-argo-wf
+        templateRef:
+          name: git-clone-template
+          template: git-clone
+        arguments:
+          parameters:
+          - name: ssh-url
+            value: "git@github.com:Open-Dataplatform/tooling-argo-wf.git"
+
+    - - name: kubectl-add-templates
+        templateRef:
+          name: kubectl-base-template
+          template: kubectl-base
+        arguments:
+          parameters:
+            - name: script
+              value: |
+                for f in workflow-templates/**/*.yaml; do
+                  kubectl apply -f $f -n argo
+                done;
+          artifacts:
+            - name: kube-config
+              from: '{{inputs.artifacts.kube-config}}'
+            - name: repo
+              from: '{{steps.git-clone-argo-wf.outputs.artifacts.repo}}'
