@@ -134,7 +134,7 @@ spec:
             keyPath: k8s/configs/server-url,
             action: put,
             valueName: url,
-            value: '{{inputs.parameters.server-url}}',
+            value: "echo {{inputs.parameters.server-url}}",
             initScript: ""
           }
         - {
