@@ -51,6 +51,7 @@ spec:
         args:
           - >
             export KUBECONFIG=/.kube/config;
+            for f in /vault/secrets/*; do source $f; done;
             export roottoken=$(kubectl get secrets unseal-keys -o 'jsonpath={.data.cluster-keys\.json}' -n vault | base64 -d | jq -r ".root_token");
             kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;  
             {{inputs.parameters.script}}
