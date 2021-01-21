@@ -22,13 +22,13 @@ spec:
           vault.hashicorp.com/agent-inject-secret-harbor-creds: "k8s/data/secrets/harbor"
           vault.hashicorp.com/agent-inject-template-harbor-creds: |
             {{ with secret "k8s/data/secrets/harbor" -}}
-              export harborUser="{{ .Data.data.username }}"
-              export harborPass="{{ .Data.data.password }}"
+              export harborUser={{ .Data.data.username }}
+              export harborPass={{ .Data.data.password }}
             {{- end }}
           vault.hashicorp.com/agent-inject-secret-server-url: "k8s/data/configs/server-url"
           vault.hashicorp.com/agent-inject-template-server-url: |
             {{ with secret "k8s/data/configs/server-url" -}}
-              export serverUrl="{{ .Data.data.url }}"
+              export serverUrl={{ .Data.data.url }}
             {{- end }}
       inputs:
         parameters:
