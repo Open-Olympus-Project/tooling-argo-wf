@@ -141,14 +141,14 @@ spec:
             keyPath: k8s/secrets/harbor,
             action: put,
             valueName: username,
-            value: "cat /vault/secrets/harbor",
+            value: "echo $harborUser",
             initScript: ""
           }
         - {
             keyPath: k8s/secrets/harbor,
             action: patch,
             valueName: password,
-            value: "cat /vault/secrets/harbor",
+            value: "echo $harborPass",
             initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/harbor; do sleep 5; done; sleep 10;" 
           }
         - {
