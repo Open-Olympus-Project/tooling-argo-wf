@@ -56,7 +56,8 @@ spec:
       args: 
         - >
           export KUBECONFIG=/.kube/config;
-          argocd login {{inputs.parameters.server-url}} --username admin --password $(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2);
+          export password=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2);
+          argocd login {{inputs.parameters.server-url}} --insecure --username admin --password $password;
           {{inputs.parameters.script}}
       env:
       - name: ARGOCD_OPTS
