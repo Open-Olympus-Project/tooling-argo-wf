@@ -192,6 +192,13 @@ spec:
                 }
               - {
                   context: 'tooling',
+                  service: 'kibana-fluentd',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-kibana-fluentd.git',
+                  namespace: 'monitoring-kibana',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
+                }
+              - {
+                  context: 'tooling',
                   service: 'vault',
                   repo: 'git@github.com:Open-Dataplatform/tooling-vault.git',
                   namespace: 'vault',
@@ -234,7 +241,7 @@ spec:
               parameters:
                 - name: server-url
                   value: '{{steps.terraform.outputs.parameters.fqdn}}'
-          
+
           - name: argo-wf-add-templates
             templateRef:
               name: tooling-argo-wf-add-tp
