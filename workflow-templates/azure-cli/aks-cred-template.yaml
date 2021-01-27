@@ -15,6 +15,8 @@ spec:
       parameters:
       - name: clusterName
       - name: resourceGroupName
+      - name: sp-secret-name
+        default: service-principal
     container:
       volumeMounts:
       - name: azure-backend-secret
@@ -32,17 +34,17 @@ spec:
       - name: sp_client_id
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_id
       - name: sp_client_secret
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_secret
       - name: sp_tenant_id
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_tenant_id
     outputs:
       artifacts:
