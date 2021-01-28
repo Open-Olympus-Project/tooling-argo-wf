@@ -54,6 +54,8 @@ spec:
                 az storage account create -g {{inputs.parameters.resource_group_name}} -n {{inputs.parameters.storage_account_name}} -l westeurope --sku Standard_LRS
                 az storage container create -n terraformstate --account-name {{inputs.parameters.storage_account_name}}
               fi
+          - name: sp-secret-name
+            value: '{{inputs.parameters.sp-secret-name}}'
 
     - - name: azure-terraform-init
         templateRef:
