@@ -12,6 +12,8 @@ spec:
       - name: terraform-folder
         path: /src
       parameters:
+      - name: sp-secret-name
+        default: service-principal
       - name: terraform-path
       - name: action
       - name: args
@@ -25,22 +27,22 @@ spec:
       - name: ARM_CLIENT_ID
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_id
       - name: ARM_CLIENT_SECRET
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_secret
       - name: ARM_SUBSCRIPTION_ID
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_subscription_id
       - name: ARM_TENANT_ID
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_tenant_id
     outputs:
       artifacts:

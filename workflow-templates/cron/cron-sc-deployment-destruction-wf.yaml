@@ -23,6 +23,8 @@ spec:
             parameters:
             - name: environment_name
               value: "cron{{steps.gen-epoch-time.outputs.result}}"
+            - name: sp-secret-name
+              value: "service-principal"
 
       - - name: delay
           template: delay
@@ -39,6 +41,8 @@ spec:
               value: service-aks-infrastructure-cron{{steps.gen-epoch-time.outputs.result}}
             - name: storage_account_name
               value: servicetfstatecron{{steps.gen-epoch-time.outputs.result}}
+            - name: sp-secret-name
+              value: "service-principal"
 
     - name: delay
       suspend:

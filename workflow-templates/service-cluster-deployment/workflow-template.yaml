@@ -11,12 +11,16 @@ spec:
     parameters:
       - name: environment_name
         value: dev
+      - name: sp-secret-name
+        value: service-principal
   templates:
     - name: service-cluster-deployment
       inputs:
         parameters:
           - name: environment_name
             default: '{{workflow.parameters.environment_name}}'
+          - name: sp-secret-name
+            default: '{{workflow.parameters.sp-secret-name}}'
       steps:
         - - name: terraform
             templateRef:
@@ -26,6 +30,8 @@ spec:
               parameters:
                 - name: environment_name
                   value: '{{inputs.parameters.environment_name}}'
+                - name: sp-secret-name
+                  value: '{{inputs.parameters.sp-secret-name}}'
                 - name: resource_group_name
                   value: service-aks-infrastructure-{{inputs.parameters.environment_name}}
                 - name: storage_account_name

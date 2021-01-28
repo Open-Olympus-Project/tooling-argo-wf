@@ -10,6 +10,8 @@ spec:
     inputs:
       parameters:
       - name: script
+      - name: sp-secret-name
+        default: service-principal
     container:
       image: mcr.microsoft.com/azure-cli
       command: ["/bin/sh", "-c"]
@@ -22,15 +24,15 @@ spec:
       - name: sp_client_id
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_id
       - name: sp_client_secret
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_client_secret
       - name: sp_tenant_id
         valueFrom:
           secretKeyRef:
-            name: service-principal
+            name: '{{inputs.parameters.sp-secret-name}}'
             key: sp_tenant_id
