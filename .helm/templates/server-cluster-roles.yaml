@@ -36,6 +36,7 @@ rules:
   - secrets
   verbs:
   - get
+  - create
 {{- with .Values.server.rbac.secretWhitelist }}
   resourceNames: {{- toYaml . | nindent 4 }}
 {{- end }}
