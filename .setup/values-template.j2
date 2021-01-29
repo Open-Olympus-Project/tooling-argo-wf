@@ -66,7 +66,7 @@ server:
       name: argo-server-sso
       key: client-secret
     ## The OIDC redirect URL. Should be in the form <argo-root-url>/oauth2/callback.
-    redirectUrl: https://{{ fqdn }}/oauth2/callback
+    redirectUrl: https://{{ fqdn }}/argo/oauth2/callback
 
 minio:
   # If set to true then chart installs minio and generate according artifactRepository section in workflow controller config map
