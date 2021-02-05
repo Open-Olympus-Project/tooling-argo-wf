@@ -28,11 +28,13 @@ spec:
           vault.hashicorp.com/agent-inject: "true"
           vault.hashicorp.com/role: "k8s-secrets"
           vault.hashicorp.com/agent-inject-secret-id_rsa: "k8s/data/secrets/github-ssh"
+          vault.hashicorp.com/secret-volume-path-id_rsa: "/vault/github"
           vault.hashicorp.com/agent-inject-template-id_rsa: |
             {{- with secret "k8s/data/secrets/github-ssh" -}}
             {{ .Data.data.github }}
             {{- end -}}
           vault.hashicorp.com/agent-inject-secret-id_rsa.pub: "k8s/data/secrets/github-ssh"
+          vault.hashicorp.com/secret-volume-path-id_rsa.pub: "/vault/github"
           vault.hashicorp.com/agent-inject-template-id_rsa.pub: |
             {{- with secret "k8s/data/secrets/github-ssh" -}}
             {{ .Data.data.githubpub }}
@@ -43,6 +45,17 @@ spec:
               export harborUser="{{ .Data.data.username }}"
               export harborPass="{{ .Data.data.password }}"
             {{- end }}
+          vault.hashicorp.com/agent-inject-secret-oauth-creds: "k8s/data/oauth/creds"
+          vault.hashicorp.com/agent-inject-template-oauth-creds: |
+            {{ with secret "k8s/data/oauth/creds" -}}
+              export oauth_argocd="{{ .Data.data.argocd }}"
+              export oauth_argowf="{{ .Data.data.argowf }}"
+              export oauth_grafana="{{ .Data.data.grafana }}"
+              export oauth_harbor="{{ .Data.data.harbor }}"
+              export oauth_jaeger="{{ .Data.data.jaeger }}"
+              export oauth_tenant_id="{{ .Data.data.tenantid }}"
+              export oauth_client_id="{{ .Data.data.clientid }}"
+            {{- end }}
       container:
         image: alpine
         command:
@@ -52,7 +65,13 @@ spec:
           - >
             export KUBECONFIG=/.kube/config;
             for f in /vault/secrets/*; do source $f; done;
+
+            kubectl cp /vault/github/id_rsa vault/tooling-vault-0:/tmp/id_rsa;
+            kubectl cp /vault/github/id_rsa.pub vault/tooling-vault-0:/tmp/id_rsa.pub;
+
             export roottoken=$(kubectl get secrets unseal-keys -o 'jsonpath={.data.cluster-keys\.json}' -n vault | base64 -d | jq -r ".root_token");
-            kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true;  
+            kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true 1>/dev/null;  
             {{inputs.parameters.script}}
+
+            kubectl exec -i tooling-vault-0 -n vault -- rm /tmp/id_rsa.pub /tmp/id_rsa | true;
       

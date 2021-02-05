@@ -75,7 +75,7 @@ spec:
                 }
               - {
                   context: 'tooling',
-                  service: 'argocd',
+                  service: 'argo-cd',
                   namespace: 'argocd',
                   valuesScript: '-f /value.yaml',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
@@ -215,6 +215,13 @@ spec:
                   service: 'argo-wf',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-wf.git',
                   namespace: 'argo',
+                  valuesScript: '--values-literal-file ../../../value.yaml',
+                }
+              - {
+                  context: 'tooling',
+                  service: 'argo-cd',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
+                  namespace: 'argocd',
                   valuesScript: '--values-literal-file ../../../value.yaml',
                 }
 

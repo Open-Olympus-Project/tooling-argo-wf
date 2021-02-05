@@ -111,7 +111,7 @@ spec:
           parameters:
           - name: script
             value: |
-              {{item.initScript}} {{item.value}} | kubectl exec -i tooling-vault-0 -n vault -- vault kv {{item.action}} {{item.keyPath}} {{item.valueName}}=-;
+              kubectl exec -i tooling-vault-0 -n vault -- vault kv {{item.action}} {{item.keyPath}} {{item.values}};
           artifacts:
           - name: kube-config
             from: '{{inputs.artifacts.kube-config}}'
@@ -119,42 +119,31 @@ spec:
         - {
             keyPath: k8s/secrets/github-ssh,
             action: put,
-            valueName: github,
-            value: "cat /vault/secrets/id_rsa",
-            initScript: ""
-          }
-        - {
-            keyPath: k8s/secrets/github-ssh,
-            action: patch,
-            valueName: githubpub,
-            value: "cat /vault/secrets/id_rsa.pub",
-            initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/github-ssh; do sleep 5; done; sleep 10;" 
+            values: "github=@/tmp/id_rsa github.pub=@/tmp/id_rsa.pub"
           }
         - {
             keyPath: k8s/configs/server-url,
             action: put,
-            valueName: url,
-            value: "echo {{inputs.parameters.server-url}}",
-            initScript: ""
+            values: "url={{inputs.parameters.server-url}}"
           }
         - {
             keyPath: k8s/secrets/harbor,
             action: put,
-            valueName: username,
-            value: "echo $harborUser",
-            initScript: ""
-          }
-        - {
-            keyPath: k8s/secrets/harbor,
-            action: patch,
-            valueName: password,
-            value: "echo $harborPass",
-            initScript: "while ! kubectl exec -i tooling-vault-0 -n vault -- vault kv get /k8s/secrets/harbor; do sleep 5; done; sleep 10;" 
+            values: "username=$harborUser password=$harborPass"
           }
         - {
             keyPath: k8s/secrets/vault,
             action: put,
-            valueName: root_token,
-            value: "echo $roottoken",
-            initScript: "" 
+            values: "root_token=$roottoken"
+          }
+        - {
+            keyPath: k8s/oauth/creds,
+            action: put,
+            values: "argocd=$oauth_argocd 
+            argowf=$oauth_argowf 
+            grafana=$oauth_grafana 
+            harbor=$oauth_harbor 
+            jaeger=$oauth_jaeger
+            tenantid=$oauth_tenant_id
+            clientid=$oauth_client_id"
           }
