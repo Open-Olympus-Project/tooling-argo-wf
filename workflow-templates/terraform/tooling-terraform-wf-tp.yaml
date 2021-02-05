@@ -23,6 +23,8 @@ spec:
         default: k8s.tfstate
       - name: sp-secret-name
         default: service-principal
+      - name: repo
+        default: git@github.com:Open-Dataplatform/platform.git
     steps:
     - - name: git-clone-terraform
         templateRef:
@@ -31,7 +33,7 @@ spec:
         arguments:
           parameters:
           - name: ssh-url
-            value: "git@github.com:Open-Dataplatform/platform.git"
+            value: '{{inputs.parameters.repo}}'
 
       - name: infrastructure-check
         templateRef:

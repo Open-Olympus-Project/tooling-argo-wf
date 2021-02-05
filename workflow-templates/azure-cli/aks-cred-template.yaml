@@ -7,10 +7,6 @@ spec:
   entrypoint: az-aks-cred
   templates:
   - name: az-aks-cred
-    volumes:
-    - name: azure-backend-secret
-      secret:
-        secretName: azure-backend-conf
     inputs:
       parameters:
       - name: clusterName
@@ -18,15 +14,10 @@ spec:
       - name: sp-secret-name
         default: service-principal
     container:
-      volumeMounts:
-      - name: azure-backend-secret
-        mountPath: "/secrets/"
-        readOnly: true
       image: mcr.microsoft.com/azure-cli
       command: ["/bin/sh", "-c"]
       args: 
         - |
-          source /secrets/azurebackend.conf
           az login --service-principal -u $sp_client_id -p $sp_client_secret --tenant $sp_tenant_id --output none;
 
           az aks get-credentials --resource-group {{inputs.parameters.resourceGroupName}} --name {{inputs.parameters.clusterName}}
