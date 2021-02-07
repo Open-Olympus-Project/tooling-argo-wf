@@ -191,16 +191,9 @@ spec:
                 }
               - {
                   context: 'tooling',
-                  service: 'kibana-elasticsearch',
-                  repo: 'git@github.com:Open-Dataplatform/tooling-kibana-elasticsearch.git',
-                  namespace: 'monitoring-kibana',
-                  valuesScript: '--values-literal-file ../../../value.yaml',
-                }
-              - {
-                  context: 'tooling',
-                  service: 'kibana-fluentd',
-                  repo: 'git@github.com:Open-Dataplatform/tooling-kibana-fluentd.git',
-                  namespace: 'monitoring-kibana',
+                  service: 'Loki',
+                  repo: 'git@github.com:Open-Dataplatform/tooling-loki.git',
+                  namespace: 'monitoring-loki',
                   valuesScript: '--values-literal-file ../../../value.yaml',
                 }
               - {
