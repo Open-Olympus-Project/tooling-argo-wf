@@ -93,7 +93,7 @@ spec:
             for f in /vault/**/*; do source $f; done;
             export KUBECONFIG=/.kube/config;
             export password=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2);
-            argocd login tooling-argo-cd-argocd-server.argocd.svc.cluster.local --insecure --username admin --password $password;
+            argocd login tooling-argocd-server.argocd.svc.cluster.local --insecure --username admin --password $password;
             
             #Script
             {{inputs.parameters.script}}

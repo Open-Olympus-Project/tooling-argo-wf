@@ -236,6 +236,7 @@ spec:
               - tooling-vault
               - tooling-argo-wf
               - tooling-harbor
+              - tooling-argocd
 
         - - name: vault-unseal-vault
             templateRef:

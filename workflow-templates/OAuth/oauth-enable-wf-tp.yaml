@@ -48,9 +48,9 @@ spec:
             repo: git@github.com:Open-Dataplatform/tooling-argo-cd.git,
             script:
               j2 /repo/.setup/oauth-values.j2 -o j2-tmp.yaml;
-              argocd app get tooling-argo-cd -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
+              argocd app get tooling-argocd -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
               yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml j2-tmp.yaml;
-              argocd app set tooling-argo-cd --values-literal-file tmp.yaml;
+              argocd app set tooling-argocd --values-literal-file tmp.yaml;
             }
 
         - name: oauth-harbor
