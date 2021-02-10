@@ -41,12 +41,10 @@ spec:
           parameters:
             - name: script
               value: |
-                {{item.initScript}} {{item.value}} | vault kv {{item.action}} {{item.keyPath}} {{item.valueName}}=-;
+                vault kv {{item.action}} {{item.keyPath}} {{item.values}};
         withItems:
         - {
             keyPath: "k8s/tooling-harbor-robot-accounts/{{inputs.parameters.repo-name}}",
             action: put,
-            valueName: authFile,
-            value: "echo {{steps.harbor-create-robot-account.outputs.parameters.config-json}} | tr -d ' ' | tr -d '\n'",
-            initScript: ""
+            values: "authFile=$(echo '{{steps.harbor-create-robot-account.outputs.parameters.config-json}}' | tr -d ' ' | tr -d '\n')",
           }

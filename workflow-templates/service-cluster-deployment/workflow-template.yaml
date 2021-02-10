@@ -75,7 +75,7 @@ spec:
                 }
               - {
                   context: 'tooling',
-                  service: 'argo-cd',
+                  service: 'argocd',
                   namespace: 'argocd',
                   valuesScript: '-f /value.yaml',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
@@ -191,7 +191,7 @@ spec:
                 }
               - {
                   context: 'tooling',
-                  service: 'Loki',
+                  service: 'loki',
                   repo: 'git@github.com:Open-Dataplatform/tooling-loki.git',
                   namespace: 'monitoring-loki',
                   valuesScript: '--values-literal-file ../../../value.yaml',
@@ -212,7 +212,7 @@ spec:
                 }
               - {
                   context: 'tooling',
-                  service: 'argo-cd',
+                  service: 'argocd',
                   repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
                   namespace: 'argocd',
                   valuesScript: '--values-literal-file ../../../value.yaml',
@@ -235,6 +235,7 @@ spec:
             withItems:
               - tooling-vault
               - tooling-argo-wf
+              - tooling-harbor
 
         - - name: vault-unseal-vault
             templateRef:
@@ -247,6 +248,8 @@ spec:
               parameters:
                 - name: server-url
                   value: '{{steps.terraform.outputs.parameters.fqdn}}'
+                - name: env
+                  value: '{{workflow.parameters.environment_name}}'
 
           - name: argo-wf-add-templates
             templateRef:

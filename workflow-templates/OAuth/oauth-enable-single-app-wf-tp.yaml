@@ -1,14 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: oauth-enable-wf-tp
+  name: oauth-enable-single-app-wf-tp
   namespace: argo
 spec:
-  entrypoint: oauth-enable-wf
+  entrypoint: oauth-enable-single-app-wf
   podGC:
     strategy: OnWorkflowSuccess
   templates:
-    - name: oauth-enable-wf 
+    - name: oauth-enable-single-app-wf 
+      inputs:
+        parameters:
+          - name: repo
+          - name: script
+          - name: server-url
+        artifacts:
+          - name: kube-config
       steps:
       - - name: git-clone
           templateRef:
@@ -17,38 +24,24 @@ spec:
           arguments:
             parameters:
             - name: ssh-url
-              value: 'git@github.com:Open-Dataplatform/tooling-grafana.git'
-        
-        - name: get-server-url
-          templateRef:
-            name: utility-get-server-url 
-            template: get-server-url
+              value: '{{inputs.parameters.repo}}'
 
-        - name: get-kubeconf
-          templateRef:
-            name: az-aks-cred-template
-            template: az-aks-cred
-          arguments:
-            parameters:
-            - name: clusterName
-              value: service-aks-mht175
-            - name: resourceGroupName
-              value: service-aks-mht175
-
-      - - name: grafana-oauth-enable
-          template: grafana-oauth-enable
+      - - name: oauth-enable
+          template: oauth-enable
           arguments:
             parameters:
             - name: server-url
-              value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+              value: '{{inputs.parameters.server-url}}'
+            - name: script
+              value: '{{inputs.parameters.script}}'
             artifacts:
             - name: repo
               from: '{{steps.git-clone.outputs.artifacts.repo}}'
             - name: kube-config
-              from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
+              from: '{{inputs.artifacts.kube-config}}'
 
 
-    - name: grafana-oauth-enable
+    - name: oauth-enable
       metadata:
         annotations:
           vault.hashicorp.com/agent-inject: "true"
@@ -59,7 +52,6 @@ spec:
               export oauth_argocd="{{ .Data.data.argocd }}"
               export oauth_argowf="{{ .Data.data.argowf }}"
               export oauth_grafana="{{ .Data.data.grafana }}"
-              export oauth_harbor="{{ .Data.data.harbor }}"
               export oauth_jaeger="{{ .Data.data.jaeger }}"
               export oauth_tenant_id="{{ .Data.data.tenantid }}"
               export oauth_client_id="{{ .Data.data.clientid }}"
@@ -67,6 +59,7 @@ spec:
       inputs:
         parameters:
         - name: server-url
+        - name: script
         artifacts:
         - name: repo
           path: /repo
@@ -82,17 +75,16 @@ spec:
           mode: 0755
           http:
             url: 'https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64'
+        - name: jq
+          path: /bin/jq
+          mode: 0755
+          http:
+            url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
         - name: kubectl
           path: /bin/kubectl
           mode: 0755
           http:
             url: https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
-      retryStrategy:
-        limit: 10
-        backoff:
-          duration: "30"       # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
-          factor: 2
-          maxDuration: "10m"   # Must be a string. Default unit is seconds. Could also be a Duration, e.g.: "2m", "6h", "1d"
       container:
         image: "{{inputs.parameters.server-url}}/tooling-j2cli/tooling-j2cli"
         command: ["/bin/sh", "-c"]
@@ -101,19 +93,13 @@ spec:
             for f in /vault/**/*; do source $f; done;
             export KUBECONFIG=/.kube/config;
             export password=$(kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-server -o name | cut -d'/' -f 2);
-            argocd login {{inputs.parameters.server-url}} --insecure --username admin --password $password;
+            argocd login tooling-argo-cd-argocd-server.argocd.svc.cluster.local --insecure --username admin --password $password;
             
-            j2 /repo/.setup/oauth-values.j2 > j2-tmp.yaml;
-
             #Script
-            argocd app get tooling-grafana -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
-            yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml  j2-tmp.yaml;
-            argocd app set tooling-grafana --values-literal-file tmp.yaml;
-
+            {{inputs.parameters.script}}
         env:
         - name: ARGOCD_OPTS
           value: '--grpc-web-root-path /argocd'  
-
 
 # - pull ever git repo that needs to enable oauth
 #   - argo wf

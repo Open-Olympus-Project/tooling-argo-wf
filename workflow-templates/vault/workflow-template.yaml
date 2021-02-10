@@ -11,8 +11,8 @@ spec:
   - name: vault-workflow
     inputs:
       parameters:
+      - name: env
       - name: server-url
-        default: ' '
       artifacts:
       - name: kube-config
     steps:
@@ -146,4 +146,9 @@ spec:
             jaeger=$oauth_jaeger
             tenantid=$oauth_tenant_id
             clientid=$oauth_client_id"
+          }
+        - {
+          keyPath: k8s/configs/env,
+          action: put,
+          values: "env={{inputs.parameters.env}}"
           }

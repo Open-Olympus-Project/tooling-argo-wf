@@ -70,8 +70,5 @@ spec:
             kubectl cp /vault/github/id_rsa.pub vault/tooling-vault-0:/tmp/id_rsa.pub;
 
             export roottoken=$(kubectl get secrets unseal-keys -o 'jsonpath={.data.cluster-keys\.json}' -n vault | base64 -d | jq -r ".root_token");
-            kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true 1>/dev/null;  
+            kubectl exec -i tooling-vault-0 -n vault -- vault login $roottoken -no-print=true 1>/dev/null;
             {{inputs.parameters.script}}
-
-            kubectl exec -i tooling-vault-0 -n vault -- rm /tmp/id_rsa.pub /tmp/id_rsa | true;
-      
