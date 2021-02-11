@@ -25,11 +25,6 @@ spec:
               export harborUser={{ .Data.data.username }}
               export harborPass={{ .Data.data.password }}
             {{- end }}
-          vault.hashicorp.com/agent-inject-secret-server-url: "k8s/data/configs/server-url"
-          vault.hashicorp.com/agent-inject-template-server-url: |
-            {{ with secret "k8s/data/configs/server-url" -}}
-              export serverUrl={{ .Data.data.url }}
-            {{- end }}
       inputs:
         parameters:
           - name: repo-name
@@ -40,17 +35,20 @@ spec:
         image: alpine/k8s:1.13.12
         command: [sh, -c]
         args: 
-          - >
+          - |
             for f in /vault/secrets/*; do source $f; done;
+            export serverUrl=tooling-harbor-harbor-core.harbor-system.svc.cluster.local;
 
-            response=$(curl -u "$harborUser:$harborPass" --head "https://$serverUrl/api/v2.0/projects?project_name={{inputs.parameters.repo-name}}" -H  "accept: application/json" --silent --write-out %{http_code} --output /dev/null ${url});
+            response=$(curl -u "$harborUser:$harborPass" --head "http://$serverUrl/api/v2.0/projects?project_name={{inputs.parameters.repo-name}}" -H  "accept:application/json" --silent --write-out %{http_code} --output /dev/null ${url});
 
             if [[ "$response" -eq 404 ]];
             then
-              response=$(curl -u "$harborUser:$harborPass" -X POST -H "accept: application/json" -H "Content-Type: application/json" "https://$serverUrl/api/v2.0/projects" -d "{  
+              response=$(curl -u "$harborUser:$harborPass" -X POST -H "accept:application/json" -H "Content-Type:application/json" "http://$serverUrl/api/v2.0/projects" -d "{  
               \"project_name\": \"{{inputs.parameters.repo-name}}\",  
               \"public\": {{inputs.parameters.is-public}}
-              }" --write-out %{http_code} --silent --output /dev/null ${url});
+              }" --write-out %{http_code} --output /dev/null ${url});
+
+              echo $response
 
               if [[ "$response" -ne 201  ]];
               then
@@ -60,6 +58,7 @@ spec:
                 echo "Project was created";
               fi
               
+
               echo -n false > /tmp/project-exists;
             else
               echo -n true > /tmp/project-exists;

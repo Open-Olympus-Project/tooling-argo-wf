@@ -37,10 +37,11 @@ spec:
         args:
           - >
             for f in /vault/secrets/*; do . $f; done;
+            export localUrl=tooling-harbor-harbor-core.harbor-system.svc.cluster.local;
 
-            projectId=$(curl -X GET -u "$harborUser:$harborPass" "https://$serverUrl/api/v2.0/projects?name={{inputs.parameters.repo-name}}" -H  "accept: application/json" --silent | jq -r ".[].project_id")
+            projectId=$(curl -X GET -u "$harborUser:$harborPass" "http://$localUrl/api/v2.0/projects?name={{inputs.parameters.repo-name}}" -H  "accept: application/json" --silent | jq -r ".[].project_id")
 
-            robotAccount=$(curl -X POST -u "$harborUser:$harborPass" "https://$serverUrl/api/v2.0/projects/$projectId/robots" -H  "accept: application/json" -H  "Content-Type: application/json" --silent -d "{
+            robotAccount=$(curl -X POST -u "$harborUser:$harborPass" "http://$localUrl/api/v2.0/projects/$projectId/robots" -H  "accept: application/json" -H  "Content-Type: application/json" --silent -d "{
               \"access\": [
                 {
                   \"resource\": \"/project/$projectId/repository\",

@@ -78,9 +78,8 @@ spec:
           value: "20"
         - name: DOCKER_CONFIG
           value: /vault/secrets
-      command:
-        - "/bin/sh"
+      command: ["/bin/sh", "-c"]
       args: 
-        - "-c"
-        - "source /vault/secrets/server-url;
-          buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true"
+        - |
+          source /vault/secrets/server-url;
+          buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true
