@@ -46,11 +46,11 @@ spec:
                 value: '{{inputs.parameters.server-url}}'
               - name: script
                 value: |
+                  kubectl get secret argocd-secret -n argocd -o json | jq --arg secret "$(echo -n $oauth_argocd | base64)" '.data."oidc.azure.clientSecret"=$secret' | kubectl apply -f -
+
                   helm get values tooling-argocd -n argocd -o yaml > tmp.yaml;
                   yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml /j2-tmp.yaml;
                   helm upgrade tooling-argocd /repo/.helm --namespace argocd -f tmp.yaml
-
-                  kubectl get secret argocd-secret -n argocd -o json | jq --arg secret "$(echo -n $oauth_argocd | base64)" '.data."oidc.azure.clientSecret"=$secret' | kubectl apply -f -
               artifacts:
               - name: repo
                 from: '{{steps.git-clone.outputs.artifacts.repo}}'
