@@ -60,6 +60,7 @@ spec:
             name: tooling-harbor-enable-oauth-tp
             template: enable-oauth
         
+      # OBS! has to be the last in the list, disableds the admin user in argocd - that user is used in the automated configurations.
       - - name: oauth-enable-argocd
           templateRef:
             name: oauth-enable-argocd-app-wf-tp
