@@ -51,6 +51,7 @@ spec:
                   helm get values tooling-argocd -n argocd -o yaml > tmp.yaml;
                   yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml /j2-tmp.yaml;
                   helm upgrade tooling-argocd /repo/.helm --namespace argocd -f tmp.yaml
+                  kubectl rollout restart deployment tooling-argocd-server -n argocd
               artifacts:
               - name: repo
                 from: '{{steps.git-clone.outputs.artifacts.repo}}'
