@@ -45,17 +45,31 @@ spec:
               argocd app set tooling-grafana --values-literal-file tmp.yaml;
             }
           - {
-            repo: git@github.com:Open-Dataplatform/tooling-argo-cd.git,
+            repo: git@github.com:Open-Dataplatform/tooling-argo-wf.git,
             script:
               j2 /repo/.setup/oauth-values.j2 -o j2-tmp.yaml;
-              argocd app get tooling-argocd -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
+              argocd app get tooling-argo-wf -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
               yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml j2-tmp.yaml;
-              argocd app set tooling-argocd --values-literal-file tmp.yaml;
+              argocd app set tooling-argo-wf --values-literal-file tmp.yaml;
 
-              kubectl get secret argocd-secret -n argocd -o json | jq --arg secret "$(echo -n $oauth_argocd | base64)" '.data."oidc.azure.clientSecret"=$secret' | kubectl apply -f -
-            }
+              kubectl create secret generic argo-server-sso -n argo --from-literal=clientsecret=$oauth_argowf --from-literal=clientid=$oauth_client_id --save-config --dry-run=client -o yaml | kubectl apply -f -;
+            }          
           
         - name: oauth-harbor
           templateRef:
             name: tooling-harbor-enable-oauth-tp
             template: enable-oauth
+        
+      - - name: oauth-enable-argocd
+          templateRef:
+            name: oauth-enable-argocd-app-wf-tp
+            template: oauth-enable-argocd-wf
+          arguments:
+            parameters:
+              - name: repo
+                value: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git'
+              - name: server-url
+                value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+            artifacts:
+              - name: kube-config
+                from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
