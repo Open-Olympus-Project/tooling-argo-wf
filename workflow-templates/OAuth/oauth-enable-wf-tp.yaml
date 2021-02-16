@@ -54,17 +54,7 @@ spec:
 
               kubectl get secret argocd-secret -n argocd -o json | jq --arg secret "$(echo -n $oauth_argocd | base64)" '.data."oidc.azure.clientSecret"=$secret' | kubectl apply -f -
             }
-          - {
-            repo: git@github.com:Open-Dataplatform/tooling-argo-wf.git,
-            script:
-              j2 /repo/.setup/oauth-values.j2 -o j2-tmp.yaml;
-              argocd app get tooling-argo-wf -o yaml | yq e .spec.source.helm.values - > tmp.yaml;
-              yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' tmp.yaml j2-tmp.yaml;
-              argocd app set tooling-argo-wf --values-literal-file tmp.yaml;
-
-              kubectl create secret generic argo-server-sso -n argo --from-literal=clientsecret=$oauth_argowf --from-literal=clientid=$oauth_client_id --save-config --dry-run=client -o yaml | kubectl apply -f -;
-            }
-
+          
         - name: oauth-harbor
           templateRef:
             name: tooling-harbor-enable-oauth-tp
