@@ -2,6 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
 metadata:
   name: cron-sc-deployment-destruction-wf
+  namespace: argo
 spec:
   schedule: "@daily"
   concurrencyPolicy: "Replace"

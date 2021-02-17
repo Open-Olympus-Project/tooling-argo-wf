@@ -210,13 +210,6 @@ spec:
                   namespace: 'argo',
                   valuesScript: '--values-literal-file ../../../value.yaml',
                 }
-              - {
-                  context: 'tooling',
-                  service: 'argocd',
-                  repo: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git',
-                  namespace: 'argocd',
-                  valuesScript: '--values-literal-file ../../../value.yaml',
-                }
 
         - - name: argocd-sync-apps
             templateRef:
