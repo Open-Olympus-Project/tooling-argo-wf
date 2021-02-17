@@ -82,4 +82,4 @@ spec:
       args: 
         - |
           source /vault/secrets/server-url;
-          buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./src/ --local dockerfile=./.docker/ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true
+          buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=./ --local dockerfile=./ --output type=image,name=$serverurl/{{inputs.parameters.repo-name}}/{{inputs.parameters.repo-name}},push=true
