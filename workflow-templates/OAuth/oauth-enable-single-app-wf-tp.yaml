@@ -52,7 +52,7 @@ spec:
               export oauth_argocd="{{ .Data.data.argocd }}"
               export oauth_argowf="{{ .Data.data.argowf }}"
               export oauth_grafana="{{ .Data.data.grafana }}"
-              export oauth_jaeger="{{ .Data.data.jaeger }}"
+              export oauth_vault="{{ .Data.data.vault }}"
               export oauth_tenant_id="{{ .Data.data.tenantid }}"
               export oauth_client_id="{{ .Data.data.clientid }}"
             {{- end }}

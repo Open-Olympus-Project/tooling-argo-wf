@@ -97,7 +97,7 @@ spec:
                   capabilities = ["read"]
                 }
               EOF
-              kubectl exec -i tooling-vault-0 -n vault -- vault write auth/kubernetes/config token_reviewer_jwt="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt;
+              kubectl exec -i tooling-vault-0 -n vault -- sh -c "vault write auth/kubernetes/config token_reviewer_jwt=\"$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" kubernetes_host=\"https://https://kubernetes.default:443\" kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
               kubectl exec -i tooling-vault-0 -n vault -- vault write auth/kubernetes/role/k8s-secrets bound_service_account_names=argo,argo-server,argocd-server,default bound_service_account_namespaces=argo,argocd policies=k8s-secrets ttl=24h;
           artifacts:
           - name: kube-config
