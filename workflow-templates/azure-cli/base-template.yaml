@@ -5,6 +5,10 @@ metadata:
   namespace: argo
 spec:
   entrypoint: az-base
+  arguments:
+    parameters:
+      - name: sp-secret-name
+        value: service-principal
   templates:
   - name: az-base
     inputs:

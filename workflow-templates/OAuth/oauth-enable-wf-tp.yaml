@@ -19,6 +19,9 @@ spec:
           templateRef:
             name: az-aks-cred-template
             template: az-aks-cred
+          arguments:
+            name: sp-secret-name
+            values: '{{workflow.parameters.sp-secret-name}}'
 
       - - name: oauth-enable
           templateRef:
