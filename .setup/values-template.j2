@@ -27,6 +27,8 @@ server:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
       cert-manager.io/cluster-issuer: letsencrypt-prod
       nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "21600"
+      nginx.ingress.kubernetes.io/eventsource: "true"
 
     ## Hostnames.
     ## Must be provided if Ingress is enabled.
