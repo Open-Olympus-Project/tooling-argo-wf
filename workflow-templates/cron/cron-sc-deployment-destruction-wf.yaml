@@ -18,7 +18,7 @@ spec:
             template: gen-date
       - - name: service-cluster-deployment
           templateRef:
-            name: cron-service-cluster-deployment-template
+            name: service-cluster-deployment-template
             template: service-cluster-deployment
           arguments:
             parameters:
