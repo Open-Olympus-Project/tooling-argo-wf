@@ -60,3 +60,7 @@ spec:
         valueFrom:
           default: ''
           path: '/src/terraform/fqdn'
+      - name: fqdn_vault
+        valueFrom:
+          default: ''
+          path: '/src/terraform/fqdn_vault'

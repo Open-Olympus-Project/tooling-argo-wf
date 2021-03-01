@@ -123,3 +123,6 @@ spec:
       - name: fqdn
         valueFrom:
           parameter: '{{steps.azure-terraform-apply.outputs.parameters.fqdn}}'
+      - name: fqdn_vault
+        valueFrom:
+          parameter: '{{steps.azure-terraform-apply.outputs.parameters.fqdn_vault}}'

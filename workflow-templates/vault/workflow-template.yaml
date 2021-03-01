@@ -13,6 +13,7 @@ spec:
       parameters:
       - name: env
       - name: server-url
+      - name: vault-url
       artifacts:
       - name: kube-config
     steps:
@@ -128,6 +129,11 @@ spec:
             keyPath: k8s/configs/server-url,
             action: put,
             values: "url={{inputs.parameters.server-url}}"
+          }
+        - {
+            keyPath: k8s/configs/vault-url,
+            action: put,
+            values: "url={{inputs.parameters.vault-url}}"
           }
         - {
             keyPath: k8s/secrets/harbor,
