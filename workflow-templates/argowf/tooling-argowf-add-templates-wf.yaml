@@ -9,9 +9,6 @@ spec:
     strategy: OnWorkflowSuccess
   templates:
   - name: add-tp
-    inputs:
-      artifacts:
-      - name: kube-config
     steps:
     - - name: git-clone-argo-wf
         templateRef:
@@ -21,6 +18,15 @@ spec:
           parameters:
           - name: ssh-url
             value: "git@github.com:Open-Dataplatform/tooling-argo-wf.git"
+      
+      - name: get-kubeconf
+        templateRef:
+          name: az-aks-cred-template
+          template: az-aks-cred
+        arguments:
+          name: sp-secret-name
+          values: '{{workflow.parameters.sp-secret-name}}'
+
 
     - - name: kubectl-add-templates
         templateRef:
@@ -35,6 +41,6 @@ spec:
                 done;
           artifacts:
             - name: kube-config
-              from: '{{inputs.artifacts.kube-config}}'
+              from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
             - name: repo
               from: '{{steps.git-clone-argo-wf.outputs.artifacts.repo}}'
