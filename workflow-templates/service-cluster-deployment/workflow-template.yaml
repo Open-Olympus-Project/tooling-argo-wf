@@ -246,7 +246,7 @@ spec:
                 - name: env
                   value: '{{workflow.parameters.environment_name}}'
 
-          - name: argo-wf-add-templates
+        - - name: argo-wf-add-templates
             templateRef:
               name: tooling-argo-wf-add-tp
               template: add-tp
