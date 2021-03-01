@@ -15,6 +15,7 @@ spec:
       - name: context
       - name: service
       - name: namespace
+      - name: values-tp-file-name
       - name: valuesScript
         default: ' '
       artifacts:
@@ -29,6 +30,8 @@ spec:
           parameters:
           - name: repo
             value: '{{inputs.parameters.ssh-url}}'
+          - name: values-tp-file-name
+            value: '{{inputs.parameters.values-tp-file-name}}'
           artifacts:
           - name: values
             from: '{{inputs.artifacts.values}}'
@@ -57,4 +60,5 @@ spec:
           - name: chart
             from: '{{steps.template-value-file.outputs.artifacts.repo}}'
           - name: value
+            optional: true
             from: '{{steps.template-value-file.outputs.artifacts.value-file}}'

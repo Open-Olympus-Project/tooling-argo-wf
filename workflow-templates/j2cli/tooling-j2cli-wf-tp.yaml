@@ -10,6 +10,8 @@ spec:
     inputs:
       parameters:
       - name: repo
+      - name: values-tp-file-name
+        default: values-template
       artifacts:
       - name: values
     metadata:
@@ -40,6 +42,7 @@ spec:
         templateRef:
           name: tooling-j2cli-base-tp
           template: j2cli-base
+        when: "'{{inputs.parameters.values-tp-file-name}}' != ''"
         arguments:
           artifacts:
           - name: repo
@@ -51,11 +54,12 @@ spec:
             value: '{{steps.get-server-url.outputs.parameters.server-url}}'
           - name: script
             value: >
-              j2 --format=env /repo/.setup/values-template.j2 /values.env -o /value.yaml
+              j2 --format=env /repo/.setup/{{inputs.parameters.values-tp-file-name}}.j2 /values.env -o /value.yaml
 
     outputs:
       artifacts:
       - name: value-file
+        optional: true
         from: '{{steps.j2cli-build-value-file.outputs.artifacts.value-file}}'
       - name: repo
         from: '{{steps.git-clone.outputs.artifacts.repo}}'

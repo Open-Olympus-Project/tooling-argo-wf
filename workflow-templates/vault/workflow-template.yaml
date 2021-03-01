@@ -100,8 +100,8 @@ spec:
               EOF
               kubectl exec -i tooling-vault-0 -n vault -- vault write auth/kubernetes/role/k8s-secrets bound_service_account_names=argo,argo-server,argocd-server,default bound_service_account_namespaces=argo,argocd policies=k8s-secrets ttl=24h;
               export VAULT_SA_NAME=$(kubectl -n vault get sa tooling-vault -o jsonpath="{.secrets[*]['name']}");
-              export SA_JWT_TOKEN=$(kubectl -n vault get secret $VAULT_SA_NAME -o jsonpath="{.data.token}" | base64 --decode; echo);
-              export SA_CA_CRT=$(kubectl -n default get secret $VAULT_SA_NAME -o jsonpath="{.data['ca\.crt']}" | base64 --decode; echo);
+              export SA_JWT_TOKEN=$(kubectl -n vault get secret $VAULT_SA_NAME -o jsonpath="{.data.token}" | base64 -d; echo);
+              export SA_CA_CRT=$(kubectl -n default get secret $VAULT_SA_NAME -o jsonpath="{.data['ca\.crt']}" | base64 -d; echo);
               kubectl exec -i tooling-vault-0 -n vault -- sh -c "vault write auth/kubernetes/config token_reviewer_jwt=\"$SA_JWT_TOKEN\" kubernetes_host=\"https://kubernetes.default:443\" kubernetes_ca_cert=\"$SA_CA_CRT\"";
           artifacts:
           - name: kube-config
