@@ -101,19 +101,3 @@ spec:
         env:
         - name: ARGOCD_OPTS
           value: '--grpc-web-root-path /argocd'  
-
-# - pull ever git repo that needs to enable oauth
-#   - argo wf
-#   - argo cd
-#   - grafana
-#   - harbor
-#   - jaeger?
-
-# make a j2 template (in the .setup) that contains the needed segments that's required for oauth
-
-# run everything in parallel
-
-# use argocd set --values-literal-file to update the existing value set.
-
-# figure out a way to add the secrets to this list, without showing the value in helm.
-# best practice is to deploy secrets outside of helm.

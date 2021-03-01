@@ -24,7 +24,7 @@ spec:
         - "/bin/sh"
       args: 
         - "-c"
-        - "source /vault/secrets/server-url; echo $serverurl > /server-url;"
+        - "source /vault/secrets/server-url; echo $serverurl > /server-url; sleep 25;"
     outputs:
       parameters:
       - name: server-url

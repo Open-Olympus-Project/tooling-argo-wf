@@ -241,6 +241,8 @@ spec:
               parameters:
                 - name: server-url
                   value: '{{steps.terraform.outputs.parameters.fqdn}}'
+                - name: vault-url
+                  value: '{{steps.terraform.outputs.parameters.fqdn_vault}}'
                 - name: env
                   value: '{{workflow.parameters.environment_name}}'
 
