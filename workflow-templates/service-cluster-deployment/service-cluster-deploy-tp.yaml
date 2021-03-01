@@ -253,11 +253,13 @@ spec:
                 from: "{{steps.terraform.outputs.artifacts.kube-config}}"
             parameters:
               - name: server-url
-                value: "{{steps.terraform.outputs.parameters.fqdn}}"
+                value: '{{steps.terraform.outputs.parameters.fqdn}}'
+              - name: vault-url
+                value: '{{steps.terraform.outputs.parameters.fqdn_vault}}'
               - name: env
                 value: '{{inputs.parameters.environment_name}}'
 
-        - name: argo-wf-add-templates
+      - - name: argo-wf-add-templates
           templateRef:
             name: tooling-argo-wf-add-tp
             template: add-tp

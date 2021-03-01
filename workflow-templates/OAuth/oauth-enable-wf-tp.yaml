@@ -63,6 +63,20 @@ spec:
             name: tooling-harbor-enable-oauth-tp
             template: enable-oauth
         
+        - name: oauth-vault
+          templateRef:
+            name: oauth-enable-vault-wf-tp
+            template: oauth-enable-vault-wf
+          arguments:
+            parameters:
+              - name: repo
+                value: 'git@github.com:Open-Dataplatform/tooling-vault.git'
+              - name: server-url
+                value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+            artifacts:
+              - name: kube-config
+                from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
+
       # OBS! has to be the last in the list, disableds the admin user in argocd - that user is used in the automated configurations.
       - - name: oauth-enable-argocd
           templateRef:
