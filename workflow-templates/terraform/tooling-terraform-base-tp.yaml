@@ -24,10 +24,10 @@ spec:
         vault.hashicorp.com/agent-inject-secret-service-principal: "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}"
         vault.hashicorp.com/agent-inject-template-service-principal: |
           {{ with secret "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}" -}}
-            export ARM_CLIENT_ID="{{ .Data.data.client-id }}"
-            export ARM_CLIENT_SECRET="{{ .Data.data.client-secret }}"
-            export ARM_SUBSCRIPTION_ID="{{ .Data.data.subscription-id }}"
-            export ARM_TENANT_ID="{{ .Data.data.tenant-id }}"
+            export ARM_CLIENT_ID="{{ .Data.data.clientid }}"
+            export ARM_CLIENT_SECRET="{{ .Data.data.clientsecret }}"
+            export ARM_SUBSCRIPTION_ID="{{ .Data.data.subscriptionid }}"
+            export ARM_TENANT_ID="{{ .Data.data.tenantid }}"
           {{- end }}
     container: 
       image: hashicorp/terraform
