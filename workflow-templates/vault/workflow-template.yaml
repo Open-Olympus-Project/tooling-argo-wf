@@ -14,6 +14,7 @@ spec:
       - name: env
       - name: server-url
       - name: vault-url
+      - name: sp-secret-name
       artifacts:
       - name: kube-config
     steps:
@@ -89,6 +90,8 @@ spec:
           template: vault-logged-in
         arguments:
           parameters:
+          - name: sp-secret-name
+            value: "{{inputs.parameters.sp-secret-name}}"
           - name: script
             value: |
               kubectl exec -i tooling-vault-0 -n vault -- vault secrets enable -path=k8s kv-v2;
@@ -113,6 +116,8 @@ spec:
           template: vault-logged-in
         arguments:
           parameters:
+          - name: sp-secret-name
+            value: "{{inputs.parameters.sp-secret-name}}"
           - name: script
             value: |
               kubectl exec -i tooling-vault-0 -n vault -- vault kv {{item.action}} {{item.keyPath}} {{item.values}};
@@ -157,7 +162,15 @@ spec:
             clientid=$oauth_client_id"
           }
         - {
-          keyPath: k8s/configs/env,
-          action: put,
-          values: "env={{inputs.parameters.env}}"
+            keyPath: k8s/configs/env,
+            action: put,
+            values: "env={{inputs.parameters.env}}"
+          }
+        - {
+            keyPath: "k8s/service-principals/{{inputs.parameters.sp-secret-name}}",
+            action: put,
+            values: "clientid=$sp_client_id 
+            clientsecret=$sp_client_secret 
+            subscriptionid=$sp_subscription_id 
+            tenantid=sp_tenant_id"
           }
