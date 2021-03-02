@@ -101,6 +101,8 @@ spec:
           template:  az-base
         arguments:
           parameters:
+          - name: sp-secret-name
+            value: '{{inputs.parameters.sp-secret-name}}'
           - name: script
             value: |
               if [[ $(az group exists -n {{inputs.parameters.resource_group_name}}) ]] ;
