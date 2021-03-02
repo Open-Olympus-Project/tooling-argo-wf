@@ -13,37 +13,30 @@ spec:
         path: /src
       parameters:
       - name: sp-secret-name
-        default: service-principal
+        default: dataplatform-dev
       - name: terraform-path
       - name: action
       - name: args
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "k8s-secrets"
+        vault.hashicorp.com/agent-inject-secret-service-principal: "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}"
+        vault.hashicorp.com/agent-inject-template-service-principal: |
+          {{ with secret "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}" -}}
+            export ARM_CLIENT_ID="{{ .Data.data.client-id }}"
+            export ARM_CLIENT_SECRET="{{ .Data.data.client-secret }}"
+            export ARM_SUBSCRIPTION_ID="{{ .Data.data.subscription-id }}"
+            export ARM_TENANT_ID="{{ .Data.data.tenant-id }}"
+          {{- end }}
     container: 
       image: hashicorp/terraform
       command: ["/bin/sh", "-c"]
       args:
-       - terraform {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.terraform-path}}
+        - |
+          for f in /vault/secrets/*; do source $f; done;
+          terraform {{inputs.parameters.action}} {{inputs.parameters.args}} {{inputs.parameters.terraform-path}}
       workingDir: /src/terraform
-      env:
-      - name: ARM_CLIENT_ID
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_client_id
-      - name: ARM_CLIENT_SECRET
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_client_secret
-      - name: ARM_SUBSCRIPTION_ID
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_subscription_id
-      - name: ARM_TENANT_ID
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_tenant_id
     outputs:
       artifacts:
       - name: terraform-folder
