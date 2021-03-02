@@ -22,7 +22,7 @@ spec:
       - name: key
         default: k8s.tfstate
       - name: sp-secret-name
-        default: service-principal
+        default: dataplatform-dev
       - name: repo
         default: git@github.com:Open-Dataplatform/platform.git
     steps:
