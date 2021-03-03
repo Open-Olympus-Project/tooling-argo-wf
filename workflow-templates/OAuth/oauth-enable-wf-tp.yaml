@@ -19,9 +19,6 @@ spec:
           templateRef:
             name: az-aks-cred-template
             template: az-aks-cred
-          arguments:
-            name: sp-secret-name
-            values: '{{workflow.parameters.sp-secret-name}}'
 
       - - name: oauth-enable
           templateRef:
@@ -30,14 +27,14 @@ spec:
           arguments:
             artifacts:
               - name: kube-config
-                from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
+                from: "{{steps.get-kubeconf.outputs.artifacts.kube-config}}"
             parameters:
               - name: server-url
-                value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+                value: "{{steps.get-server-url.outputs.result}}"
               - name: repo
-                value: '{{item.repo}}'
+                value: "{{item.repo}}"
               - name: script
-                value: '{{item.script}}'
+                value: "{{item.script}}"
           withItems: 
           - {
             repo: git@github.com:Open-Dataplatform/tooling-grafana.git,
@@ -70,12 +67,12 @@ spec:
           arguments:
             parameters:
               - name: repo
-                value: 'git@github.com:Open-Dataplatform/tooling-vault.git'
+                value: "git@github.com:Open-Dataplatform/tooling-vault.git"
               - name: server-url
-                value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+                value: "{{steps.get-server-url.outputs.result}}"
             artifacts:
               - name: kube-config
-                from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
+                from: "{{steps.get-kubeconf.outputs.artifacts.kube-config}}"
 
       # OBS! has to be the last in the list, disableds the admin user in argocd - that user is used in the automated configurations.
       - - name: oauth-enable-argocd
@@ -85,9 +82,9 @@ spec:
           arguments:
             parameters:
               - name: repo
-                value: 'git@github.com:Open-Dataplatform/tooling-argo-cd.git'
+                value: "git@github.com:Open-Dataplatform/tooling-argo-cd.git"
               - name: server-url
-                value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+                value: "{{steps.get-server-url.outputs.result}}"
             artifacts:
               - name: kube-config
-                from: '{{steps.get-kubeconf.outputs.artifacts.kube-config}}'
+                from: "{{steps.get-kubeconf.outputs.artifacts.kube-config}}"

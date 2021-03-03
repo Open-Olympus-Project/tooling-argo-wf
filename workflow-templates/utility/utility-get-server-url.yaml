@@ -17,17 +17,9 @@ spec:
           {{ with secret "k8s/data/configs/server-url" -}}
             export serverurl="{{ .Data.data.url }}"
           {{- end }}
-    container:
+    script:
       image: alpine
-      workingDir: /
-      command:
-        - "/bin/sh"
-      args: 
-        - "-c"
-        - "source /vault/secrets/server-url; echo $serverurl > /server-url; sleep 25;"
-    outputs:
-      parameters:
-      - name: server-url
-        valueFrom:
-          default: ''
-          path: '/server-url'
+      command: [/bin/sh]
+      source: |
+        source /vault/secrets/server-url;
+        printf $serverurl;

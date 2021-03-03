@@ -51,7 +51,7 @@ spec:
             from: '{{inputs.artifacts.values}}'
           parameters:
           - name: server-url
-            value: '{{steps.get-server-url.outputs.parameters.server-url}}'
+            value: '{{steps.get-server-url.outputs.result}}'
           - name: script
             value: >
               j2 --format=env /repo/.setup/{{inputs.parameters.values-tp-file-name}}.j2 /values.env -o /value.yaml
