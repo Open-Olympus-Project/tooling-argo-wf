@@ -13,7 +13,7 @@ spec:
         path: /src
       parameters:
       - name: sp-secret-name
-        default: dataplatform-dev
+        default: service-principal
       - name: terraform-path
       - name: action
       - name: args

@@ -167,7 +167,7 @@ spec:
             values: "env={{inputs.parameters.env}}"
           }
         - {
-            keyPath: "k8s/service-principals/{{inputs.parameters.sp-secret-name}}",
+            keyPath: "k8s/service-principals/service-principal",
             action: put,
             values: "clientid=$sp_client_id 
             clientsecret=$sp_client_secret 

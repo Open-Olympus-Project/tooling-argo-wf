@@ -10,7 +10,7 @@ spec:
     inputs:
       parameters:
       - name: sp-secret-name
-        default: dataplatform-dev
+        default: service-principal
     metadata:
       annotations:
         vault.hashicorp.com/agent-inject: "true"
