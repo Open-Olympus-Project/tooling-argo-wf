@@ -172,5 +172,5 @@ spec:
             values: "clientid=$sp_client_id 
             clientsecret=$sp_client_secret 
             subscriptionid=$sp_subscription_id 
-            tenantid=sp_tenant_id"
+            tenantid=$sp_tenant_id"
           }
