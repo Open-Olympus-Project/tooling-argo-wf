@@ -7,22 +7,28 @@ spec:
   entrypoint: terraform-workflow
   podGC:
     strategy: OnWorkflowSuccess
+  arguments:
+    parameters:
+      - name: environment_name
+        value: dev
+      - name: sp-secret-name
+        value: dataplatform-dev
   templates:
   - name: terraform-workflow 
     inputs:
       parameters:
       - name: environment_name
-        default: dev
+        default: "{{workflow.parameters.environment_name}}"
       - name: resource_group_name
-        default: service-aks-infrastructure-dev
+        default: service-aks-infrastructure-{{workflow.parameters.environment_name}}
       - name: storage_account_name
-        default: servicetfstatedev
+        default: servicetfstate{{workflow.parameters.environment_name}}
       - name: container_name
         default: terraformstate
       - name: key
         default: k8s.tfstate
       - name: sp-secret-name
-        default: service-principal
+        default: "{{workflow.parameters.sp-secret-name}}"
       - name: repo
         default: git@github.com:Open-Dataplatform/platform.git
     steps:

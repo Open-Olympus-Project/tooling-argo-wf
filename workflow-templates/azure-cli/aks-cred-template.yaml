@@ -20,6 +20,14 @@ spec:
           {{ with secret "k8s/data/configs/env" -}}
             export environment_name="{{ .Data.data.env }}"
           {{- end }}
+        vault.hashicorp.com/agent-inject-secret-service-principal: "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}"
+        vault.hashicorp.com/agent-inject-template-service-principal: |
+          {{ with secret "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}" -}}
+            export sp_client_id="{{ .Data.data.clientid }}"
+            export sp_client_secret="{{ .Data.data.clientsecret }}"
+            export sp_subscription_id="{{ .Data.data.subscriptionid }}"
+            export sp_tenant_id="{{ .Data.data.tenantid }}"
+          {{- end }}
     container:
       image: mcr.microsoft.com/azure-cli
       command: ["/bin/sh", "-c"]
@@ -30,27 +38,6 @@ spec:
           az account set --subscription $sp_subscription_id;
 
           az aks get-credentials --resource-group service-aks-$environment_name --name service-aks-$environment_name
-      env:
-      - name: sp_client_id
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_client_id
-      - name: sp_client_secret
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_client_secret
-      - name: sp_subscription_id
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_subscription_id
-      - name: sp_tenant_id
-        valueFrom:
-          secretKeyRef:
-            name: '{{inputs.parameters.sp-secret-name}}'
-            key: sp_tenant_id
     outputs:
       artifacts:
       - name: kube-config

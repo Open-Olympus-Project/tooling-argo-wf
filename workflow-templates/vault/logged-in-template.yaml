@@ -10,6 +10,7 @@ spec:
       inputs:
         parameters:
         - name: script
+        - name: sp-secret-name
         artifacts:
         - name: kube-config
           path: /.kube/config
@@ -55,6 +56,14 @@ spec:
               export oauth_vault="{{ .Data.data.vault }}"
               export oauth_tenant_id="{{ .Data.data.tenantid }}"
               export oauth_client_id="{{ .Data.data.clientid }}"
+            {{- end }}
+          vault.hashicorp.com/agent-inject-secret-service-principal: "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}"
+          vault.hashicorp.com/agent-inject-template-service-principal: |
+            {{ with secret "k8s/data/service-principals/{{inputs.parameters.sp-secret-name}}" -}}
+              export sp_client_id="{{ .Data.data.clientid }}"
+              export sp_client_secret="{{ .Data.data.clientsecret }}"
+              export sp_subscription_id="{{ .Data.data.subscriptionid }}"
+              export sp_tenant_id="{{ .Data.data.tenantid }}"
             {{- end }}
       container:
         image: alpine
