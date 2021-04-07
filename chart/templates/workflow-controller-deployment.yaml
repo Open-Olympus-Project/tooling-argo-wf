@@ -61,6 +61,11 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: LEADER_ELECTION_IDENTITY
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
           {{- with .Values.controller.extraEnv }}
             {{ toYaml . | nindent 10 }}
           {{- end }}
