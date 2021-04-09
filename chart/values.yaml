@@ -309,10 +309,6 @@ artifactRepository:
       # key: serviceAccountKey
 
 
-webhook:
-  github:
-    secret: testingtesting
-
 # NOTE: These are setting attributes for the `minio` optional dependency
 minio:
   # If set to true then chart installs minio and generate according artifactRepository section in workflow controller config map
