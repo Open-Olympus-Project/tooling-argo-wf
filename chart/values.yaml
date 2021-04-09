@@ -308,6 +308,9 @@ artifactRepository:
       # name: my-gcs-credentials
       # key: serviceAccountKey
 
+webhook:
+  github:
+    secret: testingtesting
 
 # NOTE: These are setting attributes for the `minio` optional dependency
 minio:
