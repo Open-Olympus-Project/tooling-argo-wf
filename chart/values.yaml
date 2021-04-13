@@ -7,7 +7,7 @@ images:
   # Secrets with credentials to pull images from a private registry
   pullSecrets: []
   # - name: argo-pull-secret
-  tag: v2.12.8
+  tag: v3.0.1
 
 crdVersion: v1alpha1
 installCRD: true
@@ -307,7 +307,6 @@ artifactRepository:
     # serviceAccountKeySecret:
       # name: my-gcs-credentials
       # key: serviceAccountKey
-
 
 # NOTE: These are setting attributes for the `minio` optional dependency
 minio:
