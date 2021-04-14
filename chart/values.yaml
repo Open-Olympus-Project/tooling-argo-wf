@@ -46,6 +46,7 @@ controller:
   podSecurityContext: {}
   # podPortName: http
   metricsConfig:
+    annotations: {}
     enabled: false
     path: /metrics
     port: 8080
