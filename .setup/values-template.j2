@@ -1,6 +1,8 @@
 controller:
   containerRuntimeExecutor: pns
   metricsConfig:
+    annotations:
+      prometheus.io/scrape: 'true'
     enabled: true
 
 server:
