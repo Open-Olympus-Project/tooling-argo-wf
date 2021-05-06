@@ -7,13 +7,21 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
   - events
   verbs:
   - get
   - watch
   - list
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - watch
+  - list
   - patch
+  - create
 - apiGroups:
   - ""
   resources:
