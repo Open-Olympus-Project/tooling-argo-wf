@@ -8,7 +8,7 @@ argowf:
     # Secrets with credentials to pull images from a private registry
     pullSecrets: []
     # - name: argo-pull-secret
-    tag: v3.0.1
+    tag: v2.12.5
 
   crdVersion: v1alpha1
   installCRD: true
@@ -29,7 +29,7 @@ argowf:
     serviceAccount:
       create: false  # Specifies whether a service account should be created
       annotations: {}
-      name: ""  # Service account which is used to run workflows
+      name: "argo-workflow"  # Service account which is used to run workflows
     rbac:
       create: false  # adds Role and RoleBinding for the above specified service account to be able to run workflows
 
@@ -47,7 +47,6 @@ argowf:
     podSecurityContext: {}
     # podPortName: http
     metricsConfig:
-      annotations: {}
       enabled: false
       path: /metrics
       port: 8080
@@ -120,6 +119,8 @@ argowf:
     # The list of environment variable definitions to be added to the controller
     # manages container verbatim.
     extraEnv: []
+    # Extra arguments to be added to the controller
+    extraArgs: []
     replicas: 1
     pdb:
       enabled: false
@@ -136,7 +137,7 @@ argowf:
     # ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
     # PriorityClass: system-cluster-critical
     priorityClassName: ""
-    # https://argoproj.github.io/argo/links/
+    # https://argoproj.github.io/argo-workflows/links/
     links: []
 
   # executor controls how the init and wait container should be customized
@@ -169,9 +170,6 @@ argowf:
     serviceType: ClusterIP
     servicePort: 2746
     # servicePortName: http
-    rbac:
-      # When present, restricts secrets the server can read to a given list.
-      secretWhitelist: []
     serviceAccount: argo-server
     # Whether to create the service account with the name specified in
     # server.serviceAccount and bind it to the server role.
@@ -209,7 +207,7 @@ argowf:
     # Run the argo server in "secure" mode. Configure this value instead of
     # "--secure" in extraArgs. See the following documentation for more details
     # on secure mode:
-    # https://argoproj.github.io/argo/tls/#encrypted
+    # https://argoproj.github.io/argo-workflows/tls/#encrypted
     secure: false
 
     # Extra arguments to provide to the Argo server binary.
@@ -231,6 +229,11 @@ argowf:
       #   kubernetes.io/ingress.class: nginx
       #   kubernetes.io/tls-acme: "true"
 
+      ## Labels to be added to the web ingress.
+      ##
+      # labels:
+      #   use-cloudflare-solver: "true"
+
       ## Hostnames.
       ## Must be provided if Ingress is enabled.
       ##
@@ -238,17 +241,13 @@ argowf:
       #   - argo.domain.com
 
       ## Additional Paths for each host
-      # backends:
+      # paths:
       #   - serviceName: "ssl-redirect"
       #     servicePort: "use-annotation"
 
-      # paths:
-      #   - path: /argo
-      #   - path: /argo/(.*)
-
       ## TLS configuration.
       ## Secrets must be manually created in the namespace.
-      ##  
+      ##
       # tls:
       #   - secretName: argo-ui-tls
       #     hosts:
@@ -258,7 +257,7 @@ argowf:
       enableEditing: true
     sso:
       ## SSO configuration when SSO is specified as a server auth mode.
-      ## All the values are requied. SSO is activated by adding --auth-mode=sso
+      ## All the values are required. SSO is activated by adding --auth-mode=sso
       ## to the server command line.
       #
       ## The root URL of the OIDC identity provider.
@@ -273,9 +272,21 @@ argowf:
       #   key: client-secret
       ## The OIDC redirect URL. Should be in the form <argo-root-url>/oauth2/callback.
       # redirectUrl: https://argo/oauth2/callback
+      # rbac:
+      #   enabled: true
+      ## When present, restricts secrets the server can read to a given list.
+      ## You can use it to restrict the server to only be able to access the
+      ## service account token secrets that are associated with service accounts
+      ## used for authorization.
+      #   secretWhitelist: []
+      ## Scopes requested from the SSO ID provider.  The 'groups' scope requests
+      ## group membership information, which is usually used for authorization
+      ## decisions.
+      # scopes:
+      # - groups
 
   # Influences the creation of the ConfigMap for the workflow-controller itself.
-  useDefaultArtifactRepo: true
+  useDefaultArtifactRepo: false
   useStaticCredentials: true
   artifactRepository:
     # archiveLogs will archive the main container logs as an artifact
@@ -309,6 +320,7 @@ argowf:
       # serviceAccountKeySecret:
         # name: my-gcs-credentials
         # key: serviceAccountKey
+
 
   # NOTE: These are setting attributes for the `minio` optional dependency
   minio:
