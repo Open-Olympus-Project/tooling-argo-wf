@@ -1,1 +1,3 @@
 **/workflow-templates/testing
+argo-wf/Chart.lock
+argo-wf/charts/*
